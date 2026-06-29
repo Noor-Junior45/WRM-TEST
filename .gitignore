@@ -1,0 +1,27 @@
+
+# Web / Node
+node_modules/
+dist/
+.env
+.DS_Store
+
+# Vercel
+.vercel
+
+# Android temporary files (CRITICAL)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/captures/
+android/.externalNativeBuild
+android/.cxx
+android/*.iml
+android/.idea/workspace.xml
+android/.idea/libraries
+android/.idea/modules.xml
+android/.idea/assetWizardSettings.xml
+android/.idea/navEditor.xml
+
+# Capacitor / Native
+ios/

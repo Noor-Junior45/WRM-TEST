@@ -1,0 +1,10 @@
+{
+  "name": "Noor POS App",
+  "description": "A full-stack store management system with Warehouse, POS, Billing, and Gemini AI. Optimized for Android APK and Web.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
