@@ -60,6 +60,25 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  React.useEffect(() => {
+    const testFirebase = async () => {
+      try {
+        await getDocs(query(collection(db, 'settings'), where('userId', '==', 'test_probe'))).catch((err) => {
+          const errMsg = err?.message || String(err);
+          if (errMsg.toLowerCase().includes('suspended') || errMsg.toLowerCase().includes('permission-denied')) {
+            setError('Cloud service is temporarily suspended. Please use the "Run Sandbox Demo Mode" button below to access your local offline database.');
+          }
+        });
+      } catch (e: any) {
+        const errMsg = e?.message || String(e);
+        if (errMsg.toLowerCase().includes('suspended') || errMsg.toLowerCase().includes('permission-denied')) {
+          setError('Cloud service is temporarily suspended. Please use the "Run Sandbox Demo Mode" button below to access your local offline database.');
+        }
+      }
+    };
+    testFirebase();
+  }, []);
+
   const handleStaffLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!staffId || !staffPin) {
@@ -134,7 +153,12 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     } catch (err: any) {
       console.error(err);
       if (err.code !== 'auth/popup-closed-by-user') {
-        setError('Google Sign-In failed: ' + err.message);
+        const errMsg = err.message || '';
+        if (errMsg.toLowerCase().includes('suspended') || errMsg.toLowerCase().includes('permission-denied')) {
+          setError('Cloud service is temporarily suspended. Please use the "Run Sandbox Demo Mode" button below to access your local offline database.');
+        } else {
+          setError('Google Sign-In failed: ' + err.message);
+        }
       }
     } finally {
       setLoading(false);
@@ -192,7 +216,10 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     } catch (err: any) {
       console.error(err);
       let msg = 'Authentication failed. Please check your credentials.';
-      if (err.code === 'auth/invalid-credential') {
+      const errMsg = err.message || '';
+      if (errMsg.toLowerCase().includes('suspended') || errMsg.toLowerCase().includes('permission-denied')) {
+        msg = 'Cloud service is temporarily suspended. Please use the "Run Sandbox Demo Mode" button below to access your local offline database.';
+      } else if (err.code === 'auth/invalid-credential') {
         msg = 'Incorrect email or password. Please try again.';
       } else if (err.code === 'auth/email-already-in-use') {
         msg = 'This email is already registered. Please sign in instead.';

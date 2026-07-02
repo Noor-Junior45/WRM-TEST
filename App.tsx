@@ -115,6 +115,19 @@ const App: React.FC = () => {
         }
       }
       setIsCheckingAuth(false);
+    }, (error) => {
+      console.warn("Auth check failed (possibly suspended or network issue):", error);
+      const savedStaffStr = localStorage.getItem('noor_staff_user');
+      if (savedStaffStr) {
+        try {
+          setCurrentUser(JSON.parse(savedStaffStr));
+        } catch (e) {
+          setCurrentUser(null);
+        }
+      } else {
+        setCurrentUser(null);
+      }
+      setIsCheckingAuth(false);
     });
 
     return () => unsubscribe();
