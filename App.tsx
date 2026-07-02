@@ -4,7 +4,6 @@ import { Package, ShoppingCart, Users, User as UserIcon, LayoutDashboard } from 
 import { supabase } from './services/firebase';
 import { LoadingSpinner } from './components/UI';
 
-// Pages
 const Warehouse = React.lazy(() => import('./pages/Warehouse').then(m => ({ default: m.Warehouse })));
 const POS = React.lazy(() => import('./pages/POS').then(m => ({ default: m.POS })));
 const Dashboard = React.lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
@@ -14,137 +13,104 @@ const Auth = React.lazy(() => import('./pages/Auth').then(m => ({ default: m.Aut
 const PublicInvoice = React.lazy(() => import('./pages/PublicInvoice').then(m => ({ default: m.PublicInvoice })));
 const CustomerPortal = React.lazy(() => import('./pages/CustomerPortal').then(m => ({ default: m.CustomerPortal })));
 
+const userFromSession = (supabaseUser: any): User => ({
+  id: supabaseUser.id,
+  username: (supabaseUser.email || supabaseUser.id).split('@')[0],
+  name: supabaseUser.user_metadata?.display_name || (supabaseUser.email || supabaseUser.id).split('@')[0],
+  role: 'admin',
+  pin: '',
+  photoURL: supabaseUser.user_metadata?.avatar_url || undefined,
+});
+
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(() => {
-    const savedTab = localStorage.getItem('noor_active_tab');
-    return (savedTab as Tab) || Tab.DASHBOARD;
+    return (localStorage.getItem('noor_active_tab') as Tab) || Tab.DASHBOARD;
   });
-  
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [pendingAction, setPendingAction] = useState<string | undefined>(undefined);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isPublicMode, setIsPublicMode] = useState(false);
 
-  // --- Browser/Gesture Back Navigation Logic ---
   useEffect(() => {
-    // Handle popstate (Back/Forward buttons)
     const handlePopState = (event: PopStateEvent) => {
-      if (event.state && event.state.tab) {
+      if (event.state?.tab) {
         setActiveTab(event.state.tab as Tab);
-        // Dispatch a custom event for sub-views (like CRM Profile or Warehouse Editor)
-        // so they can decide whether to close themselves or let the tab change
         window.dispatchEvent(new CustomEvent('app-navigation-pop', { detail: event.state }));
       }
     };
-
     window.addEventListener('popstate', handlePopState);
-    
-    // Initial history entry if none exists
     if (!window.history.state) {
       window.history.replaceState({ tab: activeTab, depth: 0 }, '');
     }
-
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   const handleTabChange = (newTab: Tab) => {
     if (newTab === activeTab) return;
-    
-    // Push new tab to history stack
     window.history.pushState({ tab: newTab, depth: 0 }, '');
     setActiveTab(newTab);
     localStorage.setItem('noor_active_tab', newTab);
   };
 
   useEffect(() => {
-    if (currentUser && currentUser.role === 'staff') {
-      const allowedTabs = [Tab.PROFILE];
-      if (currentUser.staffRole === 'pos') {
-        allowedTabs.push(Tab.POS);
-      } else if (currentUser.staffRole === 'inventory') {
-        allowedTabs.push(Tab.WAREHOUSE);
-      }
-      if (!allowedTabs.includes(activeTab)) {
-        setActiveTab(allowedTabs[1] || Tab.PROFILE);
-      }
+    if (currentUser?.role === 'staff') {
+      const allowed = [Tab.PROFILE];
+      if (currentUser.staffRole === 'pos') allowed.push(Tab.POS);
+      else if (currentUser.staffRole === 'inventory') allowed.push(Tab.WAREHOUSE);
+      if (!allowed.includes(activeTab)) setActiveTab(allowed[1] || Tab.PROFILE);
     }
   }, [currentUser, activeTab]);
 
   useEffect(() => {
+    // Handle public routes immediately — no auth needed
     if (window.location.pathname.startsWith('/invoice/') || window.location.pathname.startsWith('/c/')) {
-        setIsPublicMode(true);
-        setIsCheckingAuth(false);
-        return;
+      setIsPublicMode(true);
+      setIsCheckingAuth(false);
+      return;
     }
 
+    // Crawler bot bypass
     const params = new URLSearchParams(window.location.search);
     if (params.get('access_mode') === 'crawler_granted') {
-        const botUser: User = { id: 'adsense_bot', username: 'adsense_bot', name: 'Google Crawler', role: 'admin', pin: '' };
-        setCurrentUser(botUser);
-        setIsCheckingAuth(false);
-        window.history.replaceState({}, document.title, "/");
-        return;
+      setCurrentUser({ id: 'adsense_bot', username: 'adsense_bot', name: 'Google Crawler', role: 'admin', pin: '' });
+      setIsCheckingAuth(false);
+      window.history.replaceState({}, document.title, '/');
+      return;
     }
 
-    // Check for existing session first
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const user: User = {
-            id: session.user.id,
-            username: (session.user.email || session.user.id).split('@')[0],
-            name: session.user.user_metadata?.display_name || (session.user.email || session.user.id).split('@')[0],
-            role: 'admin',
-            pin: '',
-            photoURL: session.user.user_metadata?.avatar_url || undefined
-          };
-          setCurrentUser(user);
-          localStorage.setItem('noor_user_uid', session.user.id);
-          localStorage.removeItem('noor_staff_user');
-        } else {
-          // Check for staff user in localStorage
-          const savedStaffStr = localStorage.getItem('noor_staff_user');
-          if (savedStaffStr) {
-            try {
-              setCurrentUser(JSON.parse(savedStaffStr));
-            } catch (e) {
-              setCurrentUser(null);
-            }
-          } else {
-            setCurrentUser(null);
+    // Hard timeout — never stay in loading state longer than 4 seconds
+    const timeout = setTimeout(() => {
+      setIsCheckingAuth(prev => {
+        if (prev) {
+          // Still loading after 4s — check localStorage for staff, else show login
+          const savedStaff = localStorage.getItem('noor_staff_user');
+          if (savedStaff) {
+            try { setCurrentUser(JSON.parse(savedStaff)); } catch { /* noop */ }
           }
         }
-      } catch (err) {
-        console.warn('Auth check error:', err);
-        setCurrentUser(null);
-      } finally {
-        setIsCheckingAuth(false);
-      }
-    };
+        return false;
+      });
+    }, 4000);
 
-    checkSession();
-
-    // Listen for auth changes
+    // onAuthStateChange fires immediately with INITIAL_SESSION event — no need for getSession()
+    let resolved = false;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+      }
+
       if (session?.user) {
-        const user: User = {
-          id: session.user.id,
-          username: (session.user.email || session.user.id).split('@')[0],
-          name: session.user.user_metadata?.display_name || (session.user.email || session.user.id).split('@')[0],
-          role: 'admin',
-          pin: '',
-          photoURL: session.user.user_metadata?.avatar_url || undefined
-        };
-        setCurrentUser(user);
+        setCurrentUser(userFromSession(session.user));
         localStorage.setItem('noor_user_uid', session.user.id);
         localStorage.removeItem('noor_staff_user');
       } else {
-        const savedStaffStr = localStorage.getItem('noor_staff_user');
-        if (savedStaffStr) {
+        const savedStaff = localStorage.getItem('noor_staff_user');
+        if (savedStaff) {
           try {
-            setCurrentUser(JSON.parse(savedStaffStr));
-          } catch (e) {
+            setCurrentUser(JSON.parse(savedStaff));
+          } catch {
             setCurrentUser(null);
             localStorage.removeItem('noor_user_uid');
           }
@@ -153,12 +119,18 @@ const App: React.FC = () => {
           localStorage.removeItem('noor_user_uid');
         }
       }
+
+      setIsCheckingAuth(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogin = (user: User) => setCurrentUser(user);
+
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('noor_active_tab');
@@ -173,35 +145,34 @@ const App: React.FC = () => {
 
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-sm text-gray-500 font-medium">Loading...</p>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: 44, height: 44, border: '4px solid #e2e8f0', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+          <p style={{ fontSize: 13, color: '#64748b', fontWeight: 500 }}>Loading...</p>
         </div>
       </div>
     );
   }
 
   if (isPublicMode) {
-      const isPortal = window.location.pathname.startsWith('/c/');
-      return (
-          <Suspense fallback={<div className="h-screen flex items-center justify-center"><LoadingSpinner/></div>}>
-              {isPortal ? <CustomerPortal /> : <PublicInvoice />}
-          </Suspense>
-      );
+    const isPortal = window.location.pathname.startsWith('/c/');
+    return (
+      <Suspense fallback={<div className="h-screen flex items-center justify-center"><LoadingSpinner /></div>}>
+        {isPortal ? <CustomerPortal /> : <PublicInvoice />}
+      </Suspense>
+    );
   }
 
   if (!currentUser) {
-      return (
-        <Suspense fallback={<div className="h-screen flex items-center justify-center"><LoadingSpinner/></div>}>
-            <Auth onLogin={handleLogin} />
-        </Suspense>
-      );
+    return (
+      <Suspense fallback={<div className="h-screen flex items-center justify-center"><LoadingSpinner /></div>}>
+        <Auth onLogin={handleLogin} />
+      </Suspense>
+    );
   }
 
-  const isStaff = currentUser?.role === 'staff';
-  const staffRole = currentUser?.staffRole;
-
+  const isStaff = currentUser.role === 'staff';
+  const staffRole = currentUser.staffRole;
   const showWarehouse = !isStaff || staffRole === 'inventory';
   const showPOS = !isStaff || staffRole === 'pos';
   const showDashboard = !isStaff;
@@ -211,11 +182,11 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-[#fdfdfc] text-gray-800 selection:bg-yellow-500/30">
       <main className={`${activeTab === Tab.WAREHOUSE ? 'pb-28 md:pb-32' : 'p-4 md:p-6 pb-28 md:pb-32'} w-full max-w-[1920px] mx-auto min-h-screen`}>
         <Suspense fallback={<LoadingSpinner />}>
-            {activeTab === Tab.WAREHOUSE && <Warehouse initialAction={pendingAction} onClearAction={() => setPendingAction(undefined)} />}
-            {activeTab === Tab.POS && <POS />}
-            {activeTab === Tab.DASHBOARD && <Dashboard onNavigate={handleNavigate} />}
-            {activeTab === Tab.CUSTOMERS && <Customers initialAction={pendingAction} onClearAction={() => setPendingAction(undefined)} />}
-            {activeTab === Tab.PROFILE && <Profile user={currentUser} onLogin={handleLogin} onLogout={handleLogout} />}
+          {activeTab === Tab.WAREHOUSE && <Warehouse initialAction={pendingAction} onClearAction={() => setPendingAction(undefined)} />}
+          {activeTab === Tab.POS && <POS />}
+          {activeTab === Tab.DASHBOARD && <Dashboard onNavigate={handleNavigate} />}
+          {activeTab === Tab.CUSTOMERS && <Customers initialAction={pendingAction} onClearAction={() => setPendingAction(undefined)} />}
+          {activeTab === Tab.PROFILE && <Profile user={currentUser} onLogin={handleLogin} onLogout={handleLogout} />}
         </Suspense>
       </main>
 
@@ -227,19 +198,19 @@ const App: React.FC = () => {
                 <Package size={22} />
                 <span className="text-[10px] tracking-wide">Stock</span>
               </button>
-              {(showPOS || showDashboard || showCustomers) && <div className="w-px h-6 bg-gray-800/10 mx-1"></div>}
+              {(showPOS || showDashboard || showCustomers) && <div className="w-px h-6 bg-gray-800/10 mx-1" />}
             </>
           )}
 
           {showPOS && (
             <>
               <button onClick={() => handleTabChange(Tab.POS)} className={`flex flex-col items-center gap-1 px-3 transition-all duration-300 ${activeTab === Tab.POS ? '' : 'text-gray-800'}`}>
-                 <div className={`flex items-center justify-center transition-all duration-300 ${activeTab === Tab.POS ? 'bg-green-600 text-white w-14 h-14 rounded-full shadow-xl -mt-12 ring-4 ring-[#fdfdfc]' : 'bg-transparent text-gray-800 w-auto h-auto mt-0'}`}>
-                    <ShoppingCart size={activeTab === Tab.POS ? 26 : 22} />
+                <div className={`flex items-center justify-center transition-all duration-300 ${activeTab === Tab.POS ? 'bg-green-600 text-white w-14 h-14 rounded-full shadow-xl -mt-12 ring-4 ring-[#fdfdfc]' : 'bg-transparent text-gray-800'}`}>
+                  <ShoppingCart size={activeTab === Tab.POS ? 26 : 22} />
                 </div>
-                <span className={`text-[10px] font-bold tracking-wide ${activeTab === Tab.POS ? 'w-0 h-0 opacity-0' : 'opacity-100 mt-0.5'}`}>POS</span>
+                <span className={`text-[10px] font-bold tracking-wide ${activeTab === Tab.POS ? 'opacity-0 h-0' : 'opacity-100 mt-0.5'}`}>POS</span>
               </button>
-              {(showDashboard || showCustomers) && <div className="w-px h-6 bg-gray-800/10 mx-1"></div>}
+              {(showDashboard || showCustomers) && <div className="w-px h-6 bg-gray-800/10 mx-1" />}
             </>
           )}
 
@@ -249,7 +220,7 @@ const App: React.FC = () => {
                 <LayoutDashboard size={22} />
                 <span className="text-[10px] tracking-wide">Dash</span>
               </button>
-              {showCustomers && <div className="w-px h-6 bg-gray-800/10 mx-1"></div>}
+              {showCustomers && <div className="w-px h-6 bg-gray-800/10 mx-1" />}
             </>
           )}
 
@@ -259,7 +230,7 @@ const App: React.FC = () => {
                 <Users size={22} />
                 <span className="text-[10px] tracking-wide">CRM</span>
               </button>
-              <div className="w-px h-6 bg-gray-800/10 mx-1"></div>
+              <div className="w-px h-6 bg-gray-800/10 mx-1" />
             </>
           )}
 
