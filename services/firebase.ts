@@ -1,11 +1,17 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-import firebaseConfig from '../firebase-applet-config.json';
+import { createClient } from '@supabase/supabase-js';
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-export const storage = getStorage(app);
-export default app;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Export as legacy names for backward compatibility
+export const auth = supabase.auth;
+export const db = supabase;
+export const storage = supabase.storage;
+
+export default supabase;

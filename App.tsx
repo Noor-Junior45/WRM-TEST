@@ -1,8 +1,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Tab, User } from './types';
 import { Package, ShoppingCart, Users, User as UserIcon, LayoutDashboard } from 'lucide-react';
-import { auth } from './services/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { supabase } from './services/firebase';
 import { LoadingSpinner } from './components/UI';
 
 // Pages
@@ -87,18 +86,18 @@ const App: React.FC = () => {
         return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
         const user: User = {
-          id: firebaseUser.uid,
-          username: (firebaseUser.email || firebaseUser.uid).split('@')[0],
-          name: firebaseUser.displayName || (firebaseUser.email || firebaseUser.uid).split('@')[0],
+          id: session.user.id,
+          username: (session.user.email || session.user.id).split('@')[0],
+          name: session.user.user_metadata?.display_name || (session.user.email || session.user.id).split('@')[0],
           role: 'admin',
           pin: '',
-          photoURL: firebaseUser.photoURL || undefined
+          photoURL: session.user.user_metadata?.avatar_url || undefined
         };
         setCurrentUser(user);
-        localStorage.setItem('noor_user_uid', firebaseUser.uid);
+        localStorage.setItem('noor_user_uid', session.user.id);
         localStorage.removeItem('noor_staff_user');
       } else {
         const savedStaffStr = localStorage.getItem('noor_staff_user');
@@ -115,22 +114,9 @@ const App: React.FC = () => {
         }
       }
       setIsCheckingAuth(false);
-    }, (error) => {
-      console.warn("Auth check failed (possibly suspended or network issue):", error);
-      const savedStaffStr = localStorage.getItem('noor_staff_user');
-      if (savedStaffStr) {
-        try {
-          setCurrentUser(JSON.parse(savedStaffStr));
-        } catch (e) {
-          setCurrentUser(null);
-        }
-      } else {
-        setCurrentUser(null);
-      }
-      setIsCheckingAuth(false);
     });
 
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleLogin = (user: User) => setCurrentUser(user);
