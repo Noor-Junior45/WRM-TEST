@@ -86,6 +86,46 @@ const App: React.FC = () => {
         return;
     }
 
+    // Check for existing session first
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const user: User = {
+            id: session.user.id,
+            username: (session.user.email || session.user.id).split('@')[0],
+            name: session.user.user_metadata?.display_name || (session.user.email || session.user.id).split('@')[0],
+            role: 'admin',
+            pin: '',
+            photoURL: session.user.user_metadata?.avatar_url || undefined
+          };
+          setCurrentUser(user);
+          localStorage.setItem('noor_user_uid', session.user.id);
+          localStorage.removeItem('noor_staff_user');
+        } else {
+          // Check for staff user in localStorage
+          const savedStaffStr = localStorage.getItem('noor_staff_user');
+          if (savedStaffStr) {
+            try {
+              setCurrentUser(JSON.parse(savedStaffStr));
+            } catch (e) {
+              setCurrentUser(null);
+            }
+          } else {
+            setCurrentUser(null);
+          }
+        }
+      } catch (err) {
+        console.warn('Auth check error:', err);
+        setCurrentUser(null);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkSession();
+
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         const user: User = {
@@ -113,7 +153,6 @@ const App: React.FC = () => {
           localStorage.removeItem('noor_user_uid');
         }
       }
-      setIsCheckingAuth(false);
     });
 
     return () => subscription.unsubscribe();
