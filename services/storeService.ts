@@ -230,7 +230,7 @@ const StoreService = {
   // Inventory Management
   async getInventory() { 
     const d = await this.loadData(); 
-    return d.products; 
+    return [...d.products]; 
   },
   
   async addProduct(p: Product) { 
@@ -322,7 +322,7 @@ const StoreService = {
   // Sales Management
   async getSales() { 
     const d = await this.loadData(); 
-    return d.sales; 
+    return [...d.sales]; 
   },
   
   async createSale(s: any) { 
@@ -422,7 +422,7 @@ const StoreService = {
   // Customer Management
   async getCustomers() { 
     const d = await this.loadData(); 
-    return d.customers; 
+    return [...d.customers]; 
   },
   
   async upsertCustomer(c: Partial<Customer>) {
@@ -520,7 +520,7 @@ const StoreService = {
   
   async getTags() { 
     const d = await this.loadData(); 
-    return d.tags; 
+    return [...d.tags]; 
   },
   
   async addTag(t: Tag) { 
@@ -566,7 +566,7 @@ const StoreService = {
   // Recycle Bin & Data
   async getDeletedItems() { 
     const d = await this.loadData(); 
-    return d.deletedItems; 
+    return [...d.deletedItems]; 
   },
   
   async restoreItem(id: string) {

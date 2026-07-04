@@ -256,8 +256,8 @@ export const Warehouse: React.FC<WarehouseProps> = ({ initialAction, onClearActi
         StoreService.getTags(), 
         StoreService.getSettings()
     ]);
-    setProducts(invData);
-    setTags(tagData);
+    setProducts([...invData]);
+    setTags([...tagData]);
     setSettings(settingsData);
     setLoading(false);
   };
@@ -1394,9 +1394,9 @@ export const Warehouse: React.FC<WarehouseProps> = ({ initialAction, onClearActi
           {isEditorOpen ? renderEditor() : (
               <>
                   {/* Top Fixed/Sticky Navbar */}
-                  <div id="warehouse-navbar" className="sticky top-0 z-30 -mx-4 -mt-4 px-4 py-3 md:-mx-6 md:-mt-6 md:px-6 bg-gradient-to-r from-emerald-50/80 via-white/90 to-white/95 backdrop-blur-md border-b border-emerald-100/60 flex items-center justify-between gap-4 mb-6 shadow-[0_1px_3px_rgba(16,185,129,0.05)]">
+                  <div id="warehouse-navbar" className="sticky top-0 z-30 -mx-4 -mt-4 px-4 py-3 md:-mx-6 md:-mt-6 md:px-6 bg-gradient-to-r from-emerald-50/80 via-white/90 to-white/95 backdrop-blur-md border-b border-emerald-100/60 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4 mb-6 shadow-[0_1px_3px_rgba(16,185,129,0.05)]">
                       {/* Left Side: Stock Info & SubTabs Toggle */}
-                      <div id="warehouse-left" className="flex items-center gap-4 shrink-0 select-none">
+                      <div id="warehouse-left" className="flex items-center justify-between md:justify-start gap-4 w-full md:w-auto shrink-0 select-none">
                           <div className="flex items-center gap-2.5">
                               <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-xl shadow-md shadow-emerald-500/35"><Box size={18} /></div>
                               <div className="text-left">
@@ -1425,8 +1425,8 @@ export const Warehouse: React.FC<WarehouseProps> = ({ initialAction, onClearActi
                       </div>
 
                       {/* Right Side: Search / Actions */}
-                      <div id="warehouse-right" className="flex-1 max-w-lg flex items-center gap-2.5 justify-end">
-                          <div id="warehouse-search-container" className="flex-1 max-w-sm relative">
+                      <div id="warehouse-right" className="flex items-center gap-2 w-full md:w-auto flex-1 max-w-none md:max-w-lg justify-end">
+                          <div id="warehouse-search-container" className="flex-1 max-w-none md:max-w-sm relative">
                               <div className="relative flex items-center bg-white hover:bg-slate-50 focus-within:bg-white rounded-full transition-all duration-300 border border-slate-200 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 focus-within:shadow-sm h-10 px-3.5">
                                     <Search className={`mr-2 shrink-0 transition-colors duration-300 ${isAiParsing ? 'text-indigo-500 animate-pulse' : 'text-emerald-500'}`} size={18} />
                                     <input 
@@ -1471,12 +1471,12 @@ export const Warehouse: React.FC<WarehouseProps> = ({ initialAction, onClearActi
                               <div className="relative shrink-0">
                                    <button 
                                        onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                                       className="flex items-center gap-1.5 bg-white px-3 h-10 rounded-full border border-slate-200 text-slate-700 hover:border-emerald-400 hover:bg-slate-50 font-bold text-xs shadow-sm active:scale-95 transition-all"
+                                       className="flex items-center gap-1.5 bg-white px-3 h-10 rounded-full border border-slate-200 text-slate-700 hover:border-emerald-400 hover:bg-slate-50 font-bold text-xs shadow-sm active:scale-95 transition-all shrink-0"
                                        title="Filter Stocks"
                                    >
-                                       <Filter size={14} className="text-emerald-500"/>
-                                       <span className="hidden sm:inline">Filter</span>
-                                       <ChevronDown size={14} className={`transition-transform duration-200 ${showFilterDropdown ? 'rotate-180' : ''}`}/>
+                                       <Filter size={14} className="text-emerald-500 shrink-0"/>
+                                       <span className="inline">Filter</span>
+                                       <ChevronDown size={14} className={`transition-transform duration-200 shrink-0 ${showFilterDropdown ? 'rotate-180' : ''}`}/>
                                    </button>
 
                                    {showFilterDropdown && (

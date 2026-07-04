@@ -41,11 +41,11 @@ export const Badge: React.FC<{ children: React.ReactNode, color?: string }> = ({
   </span>
 );
 
-export const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; className?: string }> = ({ isOpen, onClose, title, children, className = 'bg-white' }) => {
+export const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; className?: string }> = ({ isOpen, onClose, title, children, className = '' }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
-      <div className={`w-full max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl p-6 relative animate-in fade-in zoom-in duration-200 shadow-2xl border border-gray-200 ${className}`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+      <div className={`w-full max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto bg-white rounded-2xl p-6 relative animate-in fade-in zoom-in duration-200 shadow-2xl border border-gray-200 ${className}`}>
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-gray-900">{title}</h2>
           <button 
