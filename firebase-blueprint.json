@@ -1,0 +1,183 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "A warehouse product item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "sku": { "type": "string" },
+        "stock": { "type": "integer" },
+        "unit": { "type": "string" },
+        "lowStockThreshold": { "type": "integer" },
+        "buyPrice": { "type": "number" },
+        "sellPrice": { "type": "number" },
+        "wholesalePrice": { "type": "number" },
+        "taxRate": { "type": "number" },
+        "expiryDate": { "type": "string" },
+        "manufacturingDate": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "location": { "type": "string" },
+        "tagId": { "type": "string" },
+        "category": { "type": "string" },
+        "capacity": { "type": "string" },
+        "userId": { "type": "string" },
+        "warehouseType": { "type": "string" },
+        "batchNumber": { "type": "string" },
+        "dosageForm": { "type": "string" },
+        "manufacturer": { "type": "string" },
+        "warrantyPeriod": { "type": "string" },
+        "serialNumber": { "type": "string" },
+        "size": { "type": "string" },
+        "color": { "type": "string" },
+        "material": { "type": "string" },
+        "brand": { "type": "string" }
+      },
+      "required": ["id", "name", "sellPrice", "userId"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "A customer profile in the CRM",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "location": { "type": "string" },
+        "totalSpent": { "type": "number" },
+        "totalDues": { "type": "number" },
+        "visitCount": { "type": "integer" },
+        "userId": { "type": "string" },
+        "isWholesaler": { "type": "boolean" },
+        "history": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "payments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "amount": { "type": "number" },
+              "date": { "type": "string" },
+              "method": { "type": "string" },
+              "note": { "type": "string" },
+              "receiptImage": { "type": "string" }
+            }
+          }
+        }
+      },
+      "required": ["id", "name", "phone", "userId"]
+    },
+    "Sale": {
+      "title": "Sale",
+      "description": "A POS sale transaction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "subtotal": { "type": "number" },
+        "tax": { "type": "number" },
+        "total": { "type": "number" },
+        "amountPaid": { "type": "number" },
+        "timestamp": { "type": "string" },
+        "servedBy": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "userId": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "quantity": { "type": "number" },
+              "sellPrice": { "type": "number" },
+              "discount": { "type": "number" }
+            }
+          }
+        }
+      },
+      "required": ["id", "customerName", "total", "userId"]
+    },
+    "Tag": {
+      "title": "Tag",
+      "description": "A category or tag for products",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "color": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "name", "color", "userId"]
+    },
+    "StoreSettings": {
+      "title": "StoreSettings",
+      "description": "Store parameters and settings",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "storeName": { "type": "string" },
+        "storeAddress": { "type": "string" },
+        "storePhone": { "type": "string" },
+        "storeEmail": { "type": "string" },
+        "logo": { "type": "string" },
+        "expiryAlertDays": { "type": "integer" },
+        "lowStockDefault": { "type": "integer" },
+        "soundEnabled": { "type": "boolean" },
+        "notificationsEnabled": { "type": "boolean" },
+        "currencySymbol": { "type": "string" },
+        "recycleBinRetentionDays": { "type": "integer" },
+        "directPrintEnabled": { "type": "boolean" },
+        "scannerPreference": { "type": "string" },
+        "warehouseType": { "type": "string" }
+      },
+      "required": ["userId", "storeName"]
+    },
+    "DeletedItem": {
+      "title": "DeletedItem",
+      "description": "A deleted item stored in the recycle bin",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "originalId": { "type": "string" },
+        "type": { "type": "string" },
+        "data": { "type": "object" },
+        "deletedAt": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "originalId", "type", "deletedAt", "userId"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Store-level products list"
+    },
+    "/customers/{customerId}": {
+      "schema": "Customer",
+      "description": "Store-level customer files"
+    },
+    "/sales/{saleId}": {
+      "schema": "Sale",
+      "description": "Store-level sale events"
+    },
+    "/tags/{tagId}": {
+      "schema": "Tag",
+      "description": "Store-level product categories"
+    },
+    "/settings/{settingsId}": {
+      "schema": "StoreSettings",
+      "description": "User-level settings document"
+    },
+    "/deletedItems/{deletedItemId}": {
+      "schema": "DeletedItem",
+      "description": "Recycle bin deleted items"
+    }
+  }
+}
