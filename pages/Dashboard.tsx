@@ -199,21 +199,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
   const formatDateShort = (dateStr: string) => dateStr ? `${new Date(dateStr).getDate()} ${new Date(dateStr).toLocaleString('default', { month: 'short' })}` : '';
 
-  const MiniSparkline = ({ data, color }: { data: any[], color: string }) => (
-    <div className="h-10 w-full mt-2">
-        <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data}>
-                <defs>
-                    <linearGradient id={`color-${color}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={color} stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor={color} stopOpacity={0}/>
-                    </linearGradient>
-                </defs>
-                <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2} fillOpacity={1} fill={`url(#color-${color})`} isAnimationActive={false} />
-            </AreaChart>
-        </ResponsiveContainer>
-    </div>
-  );
+  const MiniSparkline = ({ data, color }: { data: any[], color: string }) => {
+    const safeId = color.replace('#', '');
+    return (
+      <div className="h-10 w-full mt-2">
+          <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data}>
+                  <defs>
+                      <linearGradient id={`sparkline-${safeId}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={color} stopOpacity={0.15}/>
+                          <stop offset="95%" stopColor={color} stopOpacity={0}/>
+                      </linearGradient>
+                  </defs>
+                  <Area type="monotone" dataKey="value" stroke={color} strokeWidth={1.5} fillOpacity={1} fill={`url(#sparkline-${safeId})`} isAnimationActive={false} />
+              </AreaChart>
+          </ResponsiveContainer>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-10 animate-in fade-in pb-32 relative max-w-6xl mx-auto">
@@ -252,28 +255,52 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         {/* --- INVENTORY OVERVIEW --- */}
         <section>
             <div className="flex items-center gap-2 mb-4 px-1">
-                <Box size={22} className="text-sky-600"/>
-                <h3 className="text-sm font-black text-gray-950 uppercase tracking-widest">Inventory Overview</h3>
+                <Box size={20} className="text-slate-500"/>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Inventory Overview</h3>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="border-2 border-sky-200 shadow-sm p-5 hover:border-sky-500 transition-colors">
-                  <div className="text-sky-700 text-[10px] uppercase font-black tracking-widest flex items-center gap-1 mb-1"><Box size={12} /> Total Products</div>
-                  <div className="text-4xl font-black text-gray-950">{stats.totalProducts}</div>
-              </Card>
-              <Card className="border-2 border-emerald-200 shadow-sm p-5 hover:border-emerald-500 transition-colors">
-                  <div className="text-emerald-700 text-[10px] uppercase font-black tracking-widest flex items-center gap-1 mb-1"><IndianRupee size={12} /> Total Value</div>
-                  <div className="text-3xl font-black text-gray-950">₹{stats.inventoryValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-              </Card>
-              <Card onClick={() => openDetail('LOW_STOCK')} className="border-2 border-rose-200 shadow-sm p-5 hover:border-rose-500 transition-colors cursor-pointer active:scale-95 group">
-                  <div className="text-rose-700 text-[10px] uppercase font-black tracking-widest flex items-center justify-between mb-1">
-                      <span className="flex items-center gap-1"><AlertTriangle size={12} /> Low Stock</span>
-                      <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity"/>
+              <Card className="bg-white border border-slate-100 shadow-sm p-5 hover:shadow-md transition-shadow rounded-2xl flex flex-col justify-between">
+                  <div className="text-slate-400 text-[10px] uppercase font-bold tracking-wider flex items-center gap-1.5 mb-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                      Total Products
                   </div>
-                  <div className="text-4xl font-black text-gray-950">{stats.lowStockItems.length}</div>
+                  <div>
+                      <div className="text-3xl font-bold text-slate-800">{stats.totalProducts}</div>
+                      <p className="text-[10px] text-slate-400 font-medium mt-1">Unique active SKUs</p>
+                  </div>
               </Card>
-              <Card className="border-2 border-violet-200 shadow-sm p-5 hover:border-violet-500 transition-colors">
-                  <div className="text-violet-700 text-[10px] uppercase font-black tracking-widest flex items-center gap-1 mb-1"><Layers size={12} /> Stock Units</div>
-                  <div className="text-3xl font-black text-gray-950">{stats.totalStockUnits.toLocaleString()}</div>
+              <Card className="bg-white border border-slate-100 shadow-sm p-5 hover:shadow-md transition-shadow rounded-2xl flex flex-col justify-between">
+                  <div className="text-slate-400 text-[10px] uppercase font-bold tracking-wider flex items-center gap-1.5 mb-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Total Value
+                  </div>
+                  <div>
+                      <div className="text-3xl font-bold text-slate-800">₹{stats.inventoryValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+                      <p className="text-[10px] text-slate-400 font-medium mt-1">At retail sell price</p>
+                  </div>
+              </Card>
+              <Card onClick={() => openDetail('LOW_STOCK')} className="bg-white border border-slate-100 shadow-sm p-5 hover:shadow-md transition-shadow rounded-2xl flex flex-col justify-between cursor-pointer active:scale-[0.98] group">
+                  <div className="text-slate-400 text-[10px] uppercase font-bold tracking-wider flex items-center justify-between mb-2">
+                      <span className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                          Low Stock Alert
+                      </span>
+                      <ArrowUpRight size={14} className="text-slate-400 group-hover:text-rose-500 transition-colors"/>
+                  </div>
+                  <div>
+                      <div className="text-3xl font-bold text-slate-800">{stats.lowStockItems.length}</div>
+                      <p className="text-[10px] text-rose-500 font-semibold mt-1 flex items-center gap-1">Requires restock →</p>
+                  </div>
+              </Card>
+              <Card className="bg-white border border-slate-100 shadow-sm p-5 hover:shadow-md transition-shadow rounded-2xl flex flex-col justify-between">
+                  <div className="text-slate-400 text-[10px] uppercase font-bold tracking-wider flex items-center gap-1.5 mb-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-violet-500"></span>
+                      Stock Units
+                  </div>
+                  <div>
+                      <div className="text-3xl font-bold text-slate-800">{stats.totalStockUnits.toLocaleString()}</div>
+                      <p className="text-[10px] text-slate-400 font-medium mt-1">Total items in store</p>
+                  </div>
               </Card>
             </div>
         </section>
@@ -281,93 +308,95 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         {/* --- FINANCIAL SNAPSHOT --- */}
         <section>
             <div className="flex items-center gap-2 mb-4 px-1">
-                <Activity size={22} className="text-emerald-600"/>
-                <h3 className="text-sm font-black text-gray-950 uppercase tracking-widest">Financial Snapshot</h3>
+                <Activity size={20} className="text-slate-500"/>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Financial Snapshot</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="border-0 shadow-xl bg-gradient-to-br from-emerald-600 to-green-700 text-white p-7 rounded-3xl relative overflow-hidden group">
-                    <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-700"><Wallet size={120}/></div>
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-2 text-emerald-100 font-black text-[10px] uppercase tracking-widest mb-2"><Wallet size={16} /> Total Revenue</div>
-                        <div className="text-4xl font-black">₹{stats.totalRevenue.toLocaleString()}</div>
-                        <div className="text-xs text-emerald-100 mt-2 font-bold opacity-80 flex items-center gap-1"><ArrowUpRight size={14}/> {sales.length} Transactions Recorded</div>
+                <Card className="bg-white border border-slate-100 shadow-sm p-6 rounded-2xl flex items-center justify-between hover:shadow-md transition-shadow">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                            <Wallet size={14} className="text-emerald-500" /> Total Revenue
+                        </div>
+                        <div className="text-3xl font-bold text-slate-800">₹{stats.totalRevenue.toLocaleString()}</div>
+                        <p className="text-[10px] text-slate-400 font-medium">{sales.length} transactions recorded</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                        <IndianRupee size={22} />
                     </div>
                 </Card>
-                <Card onClick={() => openDetail('DUES')} className="border-0 shadow-xl bg-gradient-to-br from-rose-500 to-red-700 text-white p-7 rounded-3xl relative overflow-hidden group cursor-pointer active:scale-95">
-                    <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-700"><AlertTriangle size={120}/></div>
-                    <div className="relative z-10">
-                        <div className="flex items-center justify-between gap-2 text-rose-100 font-black text-[10px] uppercase tracking-widest mb-2">
-                            <span className="flex items-center gap-2"><AlertTriangle size={16} /> Outstanding Dues</span>
-                            <ArrowUpRight size={16} />
+                <Card onClick={() => openDetail('DUES')} className="bg-white border border-slate-100 shadow-sm p-6 rounded-2xl flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98] group">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                            <AlertTriangle size={14} className="text-rose-500" /> Outstanding Dues
                         </div>
-                        <div className="text-4xl font-black">₹{stats.totalDues.toLocaleString()}</div>
-                        <div className="text-xs text-rose-100 mt-2 font-bold opacity-80">{stats.customersWithDues.length} Customers pending</div>
+                        <div className="text-3xl font-bold text-slate-800">₹{stats.totalDues.toLocaleString()}</div>
+                        <p className="text-[10px] text-rose-500 font-semibold">{stats.customersWithDues.length} customers pending collection →</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 group-hover:scale-105 transition-transform">
+                        <AlertTriangle size={22} />
                     </div>
                 </Card>
             </div>
         </section>
 
-        {/* --- 3 NEW DYNAMIC ANALYTICS METRICS --- */}
+        {/* --- PREDICTIVE DEEP ANALYTICS --- */}
         <section>
             <div className="flex items-center gap-2 mb-4 px-1">
-                <Sparkles size={22} className="text-indigo-600"/>
-                <h3 className="text-sm font-black text-gray-950 uppercase tracking-widest font-sans">Predictive Deep Analytics</h3>
+                <Sparkles size={20} className="text-slate-500"/>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Predictive Deep Analytics</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Metric 1: Average Ticket Size / Invoice Value */}
-                <Card className="bg-white border-2 border-indigo-100 p-5 hover:border-indigo-500 transition-all flex flex-col justify-between group rounded-3xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50/40 rounded-full -mr-10 -mt-10 blur-xl group-hover:scale-110 transition-transform"></div>
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-1.5 text-indigo-600 mb-1">
-                            <TrendingUp size={16}/>
-                            <span className="text-[10px] font-black uppercase tracking-widest">Avg Transaction Size</span>
+                <Card className="bg-white border border-slate-100 shadow-sm p-6 rounded-2xl hover:shadow-md transition-all flex flex-col justify-between">
+                    <div>
+                        <div className="flex items-center gap-1.5 text-slate-400 mb-2">
+                            <TrendingUp size={14} className="text-indigo-500"/>
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Avg Transaction Size</span>
                         </div>
-                        <p className="text-xs text-gray-400 font-semibold mb-2">Average bill value per checkout</p>
-                        <div className="text-3xl font-black text-gray-950">₹{Math.round(stats.avgTransactionValue).toLocaleString()}</div>
+                        <div className="text-2xl font-bold text-slate-800">₹{Math.round(stats.avgTransactionValue).toLocaleString()}</div>
+                        <p className="text-[10px] text-slate-400 font-medium mt-1">Average bill value per checkout</p>
                     </div>
-                    <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between text-[10px] text-gray-400 font-bold">
-                        <span>VOLUME: {sales.length} BILLS</span>
-                        <span className="text-indigo-600 uppercase tracking-widest">High Health</span>
+                    <div className="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                        <span>Volume: {sales.length} Bills</span>
+                        <span className="text-emerald-600 font-semibold">Healthy Flow</span>
                     </div>
                 </Card>
 
                 {/* Metric 2: Stock Runway Alert */}
-                <Card onClick={() => openDetail('RUNWAY')} className="bg-white border-2 border-amber-100 p-5 hover:border-amber-500 transition-all flex flex-col justify-between group rounded-3xl relative overflow-hidden cursor-pointer active:scale-95">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-amber-50/40 rounded-full -mr-10 -mt-10 blur-xl group-hover:scale-110 transition-transform"></div>
-                    <div className="relative z-10">
-                        <div className="flex items-center justify-between text-amber-600 mb-1">
+                <Card onClick={() => openDetail('RUNWAY')} className="bg-white border border-slate-100 shadow-sm p-6 rounded-2xl hover:shadow-md transition-all flex flex-col justify-between cursor-pointer active:scale-[0.98] group">
+                    <div>
+                        <div className="flex items-center justify-between text-slate-400 mb-2">
                             <div className="flex items-center gap-1.5">
-                                <Hourglass size={16}/>
-                                <span className="text-[10px] font-black uppercase tracking-widest">Runway Alerts</span>
+                                <Hourglass size={14} className="text-amber-500"/>
+                                <span className="text-[10px] font-bold uppercase tracking-wider">Stock Runway Alerts</span>
                             </div>
-                            <span className="px-1.5 py-0.5 rounded-full text-[8px] font-black bg-amber-50 text-amber-700">FORECAST</span>
+                            <span className="px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-amber-50 text-amber-600 uppercase tracking-wider">Forecast</span>
                         </div>
-                        <p className="text-xs text-gray-400 font-semibold mb-2">Running out in &lt; 15 days</p>
-                        <div className="text-3xl font-black text-gray-950">{stats.runwayItems.length} <span className="text-xs font-bold text-gray-400">Products</span></div>
+                        <div className="text-2xl font-bold text-slate-800">{stats.runwayItems.length} <span className="text-xs font-normal text-slate-400">Products</span></div>
+                        <p className="text-[10px] text-slate-400 font-medium mt-1">Stock depleted within 15 days</p>
                     </div>
-                    <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between text-[10px] text-gray-400 font-bold">
-                        <span>DAILY VELOCITY CALC</span>
-                        <span className="text-amber-600 uppercase tracking-widest">View Runouts →</span>
+                    <div className="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                        <span>Velocity-based</span>
+                        <span className="text-amber-600 group-hover:text-amber-700 transition-colors">See Runouts →</span>
                     </div>
                 </Card>
 
                 {/* Metric 3: Dead Stock Capital Locked */}
-                <Card onClick={() => openDetail('DEAD_STOCK')} className="bg-white border-2 border-red-100 p-5 hover:border-red-500 transition-all flex flex-col justify-between group rounded-3xl relative overflow-hidden cursor-pointer active:scale-95">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-red-50/40 rounded-full -mr-10 -mt-10 blur-xl group-hover:scale-110 transition-transform"></div>
-                    <div className="relative z-10">
-                        <div className="flex items-center justify-between text-red-600 mb-1">
+                <Card onClick={() => openDetail('DEAD_STOCK')} className="bg-white border border-slate-100 shadow-sm p-6 rounded-2xl hover:shadow-md transition-all flex flex-col justify-between cursor-pointer active:scale-[0.98] group">
+                    <div>
+                        <div className="flex items-center justify-between text-slate-400 mb-2">
                             <div className="flex items-center gap-1.5">
-                                <AlertTriangle size={16}/>
-                                <span className="text-[10px] font-black uppercase tracking-widest">Dead Stock Lockup</span>
+                                <AlertTriangle size={14} className="text-rose-500"/>
+                                <span className="text-[10px] font-bold uppercase tracking-wider">Capital Lockup</span>
                             </div>
-                            <span className="px-1.5 py-0.5 rounded-full text-[8px] font-black bg-red-50 text-red-700">30D INACTIVE</span>
+                            <span className="px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-rose-50 text-rose-600 uppercase tracking-wider">Dormant</span>
                         </div>
-                        <p className="text-xs text-gray-400 font-semibold mb-2">No sales in past 30 days</p>
-                        <div className="text-3xl font-black text-red-600">₹{stats.deadStockValue.toLocaleString()}</div>
+                        <div className="text-2xl font-bold text-rose-600">₹{stats.deadStockValue.toLocaleString()}</div>
+                        <p className="text-[10px] text-slate-400 font-medium mt-1">No sales in past 30 days</p>
                     </div>
-                    <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between text-[10px] text-gray-400 font-bold">
-                        <span>{stats.deadStockItems.length} ITEMS DORMANT</span>
-                        <span className="text-red-600 uppercase tracking-widest">See Inactive →</span>
+                    <div className="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                        <span>{stats.deadStockItems.length} Skus Dormant</span>
+                        <span className="text-rose-600 group-hover:text-rose-700 transition-colors">Inspect →</span>
                     </div>
                 </Card>
             </div>
@@ -376,52 +405,52 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         {/* --- PAYMENT BREAKDOWN --- */}
         <section>
             <div className="flex items-center gap-2 mb-4 px-1">
-                <Banknote size={22} className="text-blue-600"/>
-                <h3 className="text-sm font-black text-gray-950 uppercase tracking-widest">Live Flow Tracking</h3>
+                <Banknote size={20} className="text-slate-500"/>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Live Flow Tracking</h3>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="bg-white border-2 border-emerald-100 p-4 hover:border-emerald-500 transition-all flex flex-col justify-between group">
-                    <div className="flex items-center justify-between text-emerald-600 mb-1">
+                <Card className="bg-white border border-slate-100 shadow-sm p-4 hover:shadow-md transition-shadow flex flex-col justify-between rounded-2xl">
+                    <div className="flex items-center justify-between text-slate-400 mb-1">
                         <div className="flex items-center gap-1.5">
-                            <Banknote size={16}/>
-                            <span className="text-[10px] font-black uppercase tracking-widest">Cash</span>
+                            <Banknote size={14} className="text-emerald-500"/>
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Cash</span>
                         </div>
-                        <Badge color="bg-emerald-50 text-emerald-700 text-[8px] px-1">LIVE</Badge>
+                        <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 text-[8px] font-bold uppercase rounded-md">Live</span>
                     </div>
-                    <div className="text-2xl font-black text-gray-950">₹{stats.cashTotal.toLocaleString()}</div>
+                    <div className="text-xl font-bold text-slate-800">₹{stats.cashTotal.toLocaleString()}</div>
                     <MiniSparkline data={stats.cashTrend} color="#10b981" />
                 </Card>
-                <Card className="bg-white border-2 border-blue-100 p-4 hover:border-blue-500 transition-all flex flex-col justify-between group">
-                    <div className="flex items-center justify-between text-blue-600 mb-1">
+                <Card className="bg-white border border-slate-100 shadow-sm p-4 hover:shadow-md transition-shadow flex flex-col justify-between rounded-2xl">
+                    <div className="flex items-center justify-between text-slate-400 mb-1">
                         <div className="flex items-center gap-1.5">
-                            <Smartphone size={16}/>
-                            <span className="text-[10px] font-black uppercase tracking-widest">UPI</span>
+                            <Smartphone size={14} className="text-blue-500"/>
+                            <span className="text-[10px] font-bold uppercase tracking-wider">UPI</span>
                         </div>
-                        <Badge color="bg-blue-50 text-blue-700 text-[8px] px-1">FAST</Badge>
+                        <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[8px] font-bold uppercase rounded-md">Fast</span>
                     </div>
-                    <div className="text-2xl font-black text-gray-950">₹{stats.upiTotal.toLocaleString()}</div>
+                    <div className="text-xl font-bold text-slate-800">₹{stats.upiTotal.toLocaleString()}</div>
                     <MiniSparkline data={stats.upiTrend} color="#3b82f6" />
                 </Card>
-                <Card className="bg-white border-2 border-indigo-100 p-4 hover:border-indigo-500 transition-all flex flex-col justify-between group">
-                    <div className="flex items-center justify-between text-indigo-600 mb-1">
+                <Card className="bg-white border border-slate-100 shadow-sm p-4 hover:shadow-md transition-shadow flex flex-col justify-between rounded-2xl">
+                    <div className="flex items-center justify-between text-slate-400 mb-1">
                         <div className="flex items-center gap-1.5">
-                            <CreditCard size={16}/>
-                            <span className="text-[10px] font-black uppercase tracking-widest">Card</span>
+                            <CreditCard size={14} className="text-indigo-500"/>
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Card</span>
                         </div>
-                        <Badge color="bg-indigo-50 text-indigo-700 text-[8px] px-1">SYNC</Badge>
+                        <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 text-[8px] font-bold uppercase rounded-md">Sync</span>
                     </div>
-                    <div className="text-2xl font-black text-gray-950">₹{stats.cardTotal.toLocaleString()}</div>
+                    <div className="text-xl font-bold text-slate-800">₹{stats.cardTotal.toLocaleString()}</div>
                     <MiniSparkline data={stats.cardTrend} color="#8b5cf6" />
                 </Card>
-                <Card className="bg-white border-2 border-amber-100 p-4 hover:border-amber-500 transition-all flex flex-col justify-between group">
-                    <div className="flex items-center justify-between text-amber-600 mb-1">
+                <Card className="bg-white border border-slate-100 shadow-sm p-4 hover:shadow-md transition-shadow flex flex-col justify-between rounded-2xl">
+                    <div className="flex items-center justify-between text-slate-400 mb-1">
                         <div className="flex items-center gap-1.5">
-                            <Clock size={16}/>
-                            <span className="text-[10px] font-black uppercase tracking-widest">Pay Later</span>
+                            <Clock size={14} className="text-amber-500"/>
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Pay Later</span>
                         </div>
-                        <Badge color="bg-amber-50 text-amber-700 text-[8px] px-1">DUES</Badge>
+                        <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 text-[8px] font-bold uppercase rounded-md">Dues</span>
                     </div>
-                    <div className="text-2xl font-black text-gray-950">₹{stats.payLaterTotal.toLocaleString()}</div>
+                    <div className="text-xl font-bold text-slate-800">₹{stats.payLaterTotal.toLocaleString()}</div>
                     <MiniSparkline data={stats.payLaterTrend} color="#f59e0b" />
                 </Card>
             </div>
@@ -430,23 +459,61 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         {/* --- SALES TREND --- */}
         <section>
             <div className="flex items-center gap-2 mb-4 px-1">
-                <TrendingUp size={22} className="text-indigo-600"/>
-                <h3 className="text-sm font-black text-gray-950 uppercase tracking-widest">Sales Trend</h3>
+                <TrendingUp size={20} className="text-slate-500"/>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sales Trend</h3>
             </div>
-            <Card className="p-8 border-2 border-indigo-50 shadow-sm h-[350px]">
+            <Card className="bg-white border border-slate-100 shadow-sm rounded-2xl p-6 h-[380px]">
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="font-black text-gray-900 text-lg">Revenue History (7 Days)</h3>
-                    <Badge color="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full">LIVE FEED</Badge>
+                    <div>
+                        <h4 className="font-bold text-slate-800 text-base">Revenue Overview</h4>
+                        <p className="text-[10px] text-slate-400 font-medium">Daily transaction volumes over the last 7 days</p>
+                    </div>
+                    <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase rounded-md tracking-wider">Google Analytics Active Mode</span>
                 </div>
-                <div className="h-60 w-full">
+                <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={stats.salesTrend}>
-                            <defs><linearGradient id="colorSalesMain" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/><stop offset="95%" stopColor="#6366f1" stopOpacity={0}/></linearGradient></defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9"/>
-                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#64748b', fontWeight: 'bold'}} dy={10}/>
-                            <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#64748b', fontWeight: 'bold'}} tickFormatter={(val) => `₹${val}`}/>
-                            <Tooltip contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}/>
-                            <Area type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#colorSalesMain)" />
+                        <AreaChart data={stats.salesTrend} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id="gaSalesGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.08}/>
+                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.00}/>
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9"/>
+                            <XAxis 
+                                dataKey="name" 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 500 }} 
+                                dy={10}
+                            />
+                            <YAxis 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 500 }} 
+                                tickFormatter={(val) => `₹${val}`}
+                            />
+                            <Tooltip 
+                                contentStyle={{
+                                    backgroundColor: '#ffffff',
+                                    borderRadius: '12px',
+                                    border: '1px solid #f1f5f9',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                    padding: '8px 12px'
+                                }}
+                                labelStyle={{ fontWeight: 'bold', color: '#64748b', fontSize: '10px', textTransform: 'uppercase' }}
+                                itemStyle={{ fontWeight: 'bold', color: '#1e293b', fontSize: '12px' }}
+                                formatter={(value: any) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                            />
+                            <Area 
+                                type="monotone" 
+                                dataKey="value" 
+                                stroke="#3b82f6" 
+                                strokeWidth={2.5} 
+                                fillOpacity={1} 
+                                fill="url(#gaSalesGradient)" 
+                                activeDot={{ r: 5, strokeWidth: 1.5, stroke: '#3b82f6', fill: '#ffffff' }}
+                            />
                         </AreaChart>
                     </ResponsiveContainer>
                 </div>
@@ -456,79 +523,75 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         {/* --- INVENTORY HEALTH --- */}
         <section>
             <div className="flex items-center gap-2 mb-4 px-1 mt-8">
-                <AlertTriangle size={22} className="text-red-600"/>
-                <h3 className="text-sm font-black text-gray-950 uppercase tracking-widest">Inventory Health</h3>
+                <AlertTriangle size={20} className="text-slate-500"/>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Inventory Health</h3>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="p-0 overflow-hidden h-[340px] flex flex-col border-2 border-indigo-50">
-                    <div className="px-6 py-5 border-b border-indigo-50 bg-indigo-50/20 flex justify-between items-center">
-                        <h3 className="font-black text-gray-950 flex items-center gap-2 text-sm"><Crown size={18} className="text-amber-500"/> TOP MOVING ITEMS</h3>
+                <Card className="p-0 overflow-hidden h-[340px] flex flex-col bg-white border border-slate-100 shadow-sm rounded-2xl">
+                    <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/40">
+                        <h3 className="font-bold text-slate-700 flex items-center gap-2 text-xs uppercase tracking-wider"><Crown size={14} className="text-amber-500"/> Top Moving Items</h3>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase bg-slate-100 px-2 py-0.5 rounded-full">High Velocity</span>
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 space-y-2">
                         {stats.topProducts.map((p, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-xl shadow-sm hover:border-indigo-200 transition-colors">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-7 h-7 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-[10px] font-black">{idx + 1}</div>
-                                    <span className="font-bold text-gray-900 text-sm truncate max-w-[120px]">{p.name}</span>
+                            <div key={idx} className="flex items-center justify-between p-3 bg-white border border-slate-100/60 rounded-xl hover:border-slate-200 transition-colors shadow-sm">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-6 h-6 rounded-full bg-slate-50 text-slate-500 flex items-center justify-center text-[10px] font-bold shrink-0">{idx + 1}</div>
+                                    <span className="font-bold text-slate-700 text-xs truncate">{p.name}</span>
                                 </div>
-                                <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full uppercase">{p.count} sold</span>
+                                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full shrink-0">{p.count} sold</span>
                             </div>
                         ))}
                     </div>
                 </Card>
 
-                <Card onClick={() => openDetail('LOW_STOCK')} className="border-2 border-rose-100 bg-rose-50/20 h-[340px] flex flex-col p-0 overflow-hidden cursor-pointer active:scale-[0.99] group">
-                    <div className="px-6 py-5 border-b border-rose-100 bg-rose-100/30 flex justify-between items-center">
-                        <h3 className="font-black text-gray-950 flex items-center gap-2 text-sm uppercase"><AlertTriangle size={20} className="text-rose-600"/> Critical Low Stock</h3>
-                        <ChevronRight size={18} className="text-rose-400 group-hover:translate-x-1 transition-transform"/>
+                <Card onClick={() => openDetail('LOW_STOCK')} className="bg-white border border-slate-100 shadow-sm h-[340px] flex flex-col p-0 overflow-hidden cursor-pointer active:scale-[0.99] group rounded-2xl">
+                    <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/40">
+                        <h3 className="font-bold text-slate-700 flex items-center gap-2 text-xs uppercase tracking-wider"><AlertTriangle size={14} className="text-rose-500"/> Critical Low Stock</h3>
+                        <ChevronRight size={14} className="text-slate-400 group-hover:translate-x-1 transition-transform"/>
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 space-y-2">
                         {stats.lowStockItems.length > 0 ? stats.lowStockItems.slice(0, 5).map(p => (
-                            <div key={p.id} className="flex justify-between items-center text-sm py-3 px-4 bg-white rounded-xl border border-rose-100 shadow-sm hover:border-rose-400 transition-colors">
-                                <span className="font-bold truncate text-gray-900 w-2/3">{p.name}</span>
-                                <span className="font-black text-xs text-rose-600 whitespace-nowrap">{p.stock} units</span>
+                            <div key={p.id} className="flex justify-between items-center p-3 bg-white border border-slate-100/60 rounded-xl hover:border-slate-200 transition-colors shadow-sm">
+                                <span className="font-bold text-slate-700 text-xs truncate pr-2">{p.name}</span>
+                                <span className="font-bold text-[10px] text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md whitespace-nowrap">{p.stock} units</span>
                             </div>
                         )) : (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-40">
-                                <CheckCircle size={48} className="mb-3 text-emerald-500"/>
-                                <p className="text-sm font-bold uppercase tracking-widest">Levels Healthy</p>
+                            <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                                <CheckCircle size={36} className="mb-2 text-emerald-500 opacity-60"/>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Levels Healthy</p>
                             </div>
                         )}
-                        {stats.lowStockItems.length > 5 && <div className="text-center pt-2 text-[10px] font-bold text-rose-400 uppercase">View {stats.lowStockItems.length - 5} More...</div>}
+                        {stats.lowStockItems.length > 5 && <div className="text-center pt-2 text-[10px] font-bold text-rose-400 uppercase tracking-wider">View {stats.lowStockItems.length - 5} More...</div>}
                     </div>
                 </Card>
 
-                <Card onClick={() => openDetail('EXPIRING')} className="border-2 border-amber-100 bg-amber-50/20 h-[340px] flex flex-col p-0 overflow-hidden cursor-pointer active:scale-[0.99] group">
-                    <div className="px-6 py-5 border-b border-amber-100 bg-amber-100/30 flex flex-col gap-1">
-                        <div className="flex justify-between items-center">
-                            <h3 className="font-black text-gray-950 flex items-center gap-2 text-sm uppercase"><Clock size={20} className="text-amber-600"/> Expiring Soon</h3>
-                            <ChevronRight size={18} className="text-amber-400 group-hover:translate-x-1 transition-transform"/>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <Badge color="bg-amber-100 text-amber-700 text-[8px] font-black uppercase tracking-tighter">Preference: {settings?.expiryAlertDays || 7} Days</Badge>
-                        </div>
+                <Card onClick={() => openDetail('EXPIRING')} className="bg-white border border-slate-100 shadow-sm h-[340px] flex flex-col p-0 overflow-hidden cursor-pointer active:scale-[0.99] group rounded-2xl">
+                    <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/40">
+                        <h3 className="font-bold text-slate-700 flex items-center gap-2 text-xs uppercase tracking-wider"><Clock size={14} className="text-amber-500"/> Expiring Soon</h3>
+                        <ChevronRight size={14} className="text-slate-400 group-hover:translate-x-1 transition-transform"/>
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 space-y-2">
                          {stats.expiringItems.length > 0 ? stats.expiringItems.slice(0, 5).map(p => (
-                            <div key={p.id} className="flex flex-col gap-1 p-3 bg-white rounded-xl border border-amber-100 shadow-sm hover:border-amber-400 transition-colors">
+                            <div key={p.id} className="flex flex-col gap-1 p-3 bg-white border border-slate-100/60 rounded-xl hover:border-slate-200 transition-colors shadow-sm">
                                 <div className="flex justify-between items-center">
-                                    <span className="font-bold truncate text-gray-900 text-sm">{p.name}</span>
-                                    <Badge color={p.daysLeft === 0 ? "bg-red-500 text-white" : "bg-amber-500 text-white"}>
+                                    <span className="font-bold text-slate-700 text-xs truncate mr-2">{p.name}</span>
+                                    <span className={`px-1.5 py-0.5 text-[8px] font-bold uppercase rounded-md ${p.daysLeft === 0 ? 'bg-red-500 text-white' : 'bg-amber-500 text-white'}`}>
                                         {p.daysLeft === 0 ? 'Today' : `${p.daysLeft}d left`}
-                                    </Badge>
+                                    </span>
                                 </div>
-                                <div className="flex justify-between items-center text-[10px] text-gray-500 font-bold uppercase">
+                                <div className="flex justify-between items-center text-[9px] text-slate-400 font-medium">
                                     <span>Stock: {p.stock}</span>
                                     <span>Exp: {formatDateShort(p.expiryDate || '')}</span>
                                 </div>
                             </div>
                         )) : (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-40">
-                                <ShieldCheck size={48} className="mb-3 text-emerald-500"/>
-                                <p className="text-sm font-bold uppercase tracking-widest">No Expiry Risk</p>
+                            <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                                <ShieldCheck size={36} className="mb-2 text-emerald-500 opacity-60"/>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">No Expiry Risk</p>
                             </div>
                         )}
-                        {stats.expiringItems.length > 5 && <div className="text-center pt-2 text-[10px] font-bold text-amber-400 uppercase">View {stats.expiringItems.length - 5} More...</div>}
+                        {stats.expiringItems.length > 5 && <div className="text-center pt-2 text-[10px] font-bold text-amber-400 uppercase tracking-wider">View {stats.expiringItems.length - 5} More...</div>}
                     </div>
                 </Card>
             </div>
@@ -537,69 +600,139 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         {/* --- CUSTOMER INSIGHTS --- */}
         <section>
             <div className="flex items-center gap-2 mb-4 px-1">
-                <Users size={22} className="text-purple-600"/>
-                <h3 className="text-sm font-black text-gray-950 uppercase tracking-widest">Customer Insights</h3>
+                <Users size={20} className="text-slate-500"/>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Customer Insights</h3>
             </div>
             
-            <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card className="bg-amber-50/30 border-2 border-amber-200 p-6 flex items-center gap-6 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:scale-110 transition-transform"></div>
-                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-lg shrink-0 group-hover:rotate-3 transition-transform">
-                            <Crown size={36} className="text-white" />
-                        </div>
-                        <div className="flex-1 relative z-10">
-                            <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-1 opacity-80">Top Spender</p>
-                            <h4 className="text-2xl font-black text-gray-950 leading-tight mb-1 truncate">{stats.topBuyer?.name || "No data"}</h4>
-                            <p className="text-sm font-medium text-gray-500">Value: <span className="text-green-600 font-black">₹{stats.topBuyer?.totalSpent.toLocaleString() || "0"}</span></p>
-                        </div>
-                    </Card>
-
-                    <Card className="bg-blue-50/30 border-2 border-blue-200 p-6 flex items-center gap-6 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-200/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:scale-110 transition-transform"></div>
-                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center shadow-lg shrink-0 group-hover:rotate-3 transition-transform">
-                            <Star size={36} className="text-white" />
-                        </div>
-                        <div className="flex-1 relative z-10">
-                            <p className="text-[10px] font-black text-blue-700 uppercase tracking-widest mb-1 opacity-80">Most Loyal</p>
-                            <h4 className="text-2xl font-black text-gray-950 leading-tight mb-1 truncate">{stats.mostLoyal?.name || "No data"}</h4>
-                            <p className="text-sm font-medium text-gray-500">History: <span className="text-blue-600 font-black">{stats.mostLoyal?.visitCount || "0"} Visits</span></p>
-                        </div>
-                    </Card>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Card onClick={() => openDetail('DUES')} className="bg-gradient-to-br from-orange-500 to-red-700 text-white border-0 h-24 p-5 flex items-center justify-between shadow-xl rounded-2xl cursor-pointer hover:shadow-2xl transition-all active:scale-95 group">
-                        <div>
-                            <p className="text-[10px] uppercase font-black text-orange-100 mb-0.5 tracking-widest">Total Outstanding</p>
-                            <h4 className="font-black text-lg truncate flex items-center gap-2">{stats.customersWithDues.length} ACTIVE DEBTORS <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform"/></h4>
-                        </div>
-                        <div className="text-2xl font-black">₹{stats.totalDues.toLocaleString()}</div>
-                    </Card>
-
-                    <Card className="h-24 p-4 flex items-center justify-between shadow-md bg-indigo-50/20 border-2 border-indigo-100 rounded-2xl group hover:border-indigo-400 transition-all">
-                        <div className="flex flex-col">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Customer Retention</p>
-                            <div className="text-[10px] text-gray-500 flex flex-col gap-1">
-                                {stats.customerComposition.map(c => (
-                                    <div key={c.name} className="flex items-center gap-1.5">
-                                        <div className="w-2 h-2 rounded-full" style={{backgroundColor: c.color}}></div>
-                                        <span className="font-black text-gray-700 uppercase">{c.name}: {c.value}</span>
-                                    </div>
-                                ))}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Panel 1: Customer Spotlights (6 columns on lg) */}
+                <Card className="lg:col-span-6 bg-white border border-slate-100 shadow-sm p-6 rounded-2xl flex flex-col justify-between h-[340px]">
+                    <div>
+                        <div className="flex justify-between items-center mb-5">
+                            <div>
+                                <h4 className="font-bold text-slate-800 text-sm">Customer Spotlights</h4>
+                                <p className="text-[10px] text-slate-400 font-medium">Top performing customer profiles & loyalty segments</p>
                             </div>
                         </div>
-                        <div className="w-16 h-16 shrink-0 group-hover:scale-110 transition-transform">
+
+                        <div className="space-y-4">
+                            {/* Top Spender */}
+                            <div className="flex items-center justify-between p-3.5 bg-slate-50/30 border border-slate-100/60 rounded-xl">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                                        <Crown size={18} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[9px] font-bold text-amber-600 uppercase tracking-wider">Top Spender</p>
+                                        <h5 className="font-bold text-slate-700 text-sm truncate">{stats.topBuyer?.name || "No data yet"}</h5>
+                                    </div>
+                                </div>
+                                <div className="text-right shrink-0">
+                                    <span className="text-xs font-bold text-slate-800">Total Spend</span>
+                                    <p className="text-sm font-black text-emerald-600">₹{stats.topBuyer?.totalSpent.toLocaleString() || "0"}</p>
+                                </div>
+                            </div>
+
+                            {/* Most Loyal */}
+                            <div className="flex items-center justify-between p-3.5 bg-slate-50/30 border border-slate-100/60 rounded-xl">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                        <Star size={18} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[9px] font-bold text-blue-600 uppercase tracking-wider">Most Loyal</p>
+                                        <h5 className="font-bold text-slate-700 text-sm truncate">{stats.mostLoyal?.name || "No data yet"}</h5>
+                                    </div>
+                                </div>
+                                <div className="text-right shrink-0">
+                                    <span className="text-xs font-bold text-slate-800">Frequency</span>
+                                    <p className="text-sm font-black text-blue-600">{stats.mostLoyal?.visitCount || "0"} Visits</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Outstanding debtors soft indicator */}
+                    <div 
+                        onClick={() => openDetail('DUES')}
+                        className="mt-4 p-2.5 bg-rose-50/30 hover:bg-rose-50/50 border border-rose-100/60 rounded-xl flex items-center justify-between cursor-pointer transition-colors active:scale-[0.99] group"
+                    >
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0"></span>
+                            <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider truncate">
+                                {stats.customersWithDues.length} Outstanding Debtors
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0 text-rose-600">
+                            <span className="text-xs font-black">₹{stats.totalDues.toLocaleString()}</span>
+                            <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                    </div>
+                </Card>
+
+                {/* Panel 2: Customer Composition (6 columns on lg) */}
+                <Card className="lg:col-span-6 bg-white border border-slate-100 shadow-sm p-6 rounded-2xl flex flex-col justify-between h-[340px]">
+                    <div>
+                        <h4 className="font-bold text-slate-800 text-sm">Demographic Retention Analysis</h4>
+                        <p className="text-[10px] text-slate-400 font-medium">Distribution of customers by return frequency</p>
+                    </div>
+
+                    <div className="flex-1 flex flex-row items-center justify-center gap-6 mt-2">
+                        {/* Donut Chart with absolute total center */}
+                        <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
-                                    <Pie data={stats.customerComposition} dataKey="value" cx="50%" cy="50%" innerRadius={14} outerRadius={26} paddingAngle={3}>
-                                        {stats.customerComposition.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                                    <Pie 
+                                        data={stats.customerComposition} 
+                                        dataKey="value" 
+                                        cx="50%" 
+                                        cy="50%" 
+                                        innerRadius={45} 
+                                        outerRadius={60} 
+                                        paddingAngle={2}
+                                        isAnimationActive={false}
+                                    >
+                                        {stats.customerComposition.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={1} />
+                                        ))}
                                     </Pie>
                                 </PieChart>
                             </ResponsiveContainer>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span className="text-2xl font-black text-slate-800">{customers.length}</span>
+                                <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest">Customers</span>
+                            </div>
                         </div>
-                    </Card>
-                </div>
+
+                        {/* Custom Legend */}
+                        <div className="flex-1 space-y-2.5 max-w-[180px]">
+                            {(() => {
+                                const total = stats.customerComposition.reduce((sum, item) => sum + item.value, 0) || 1;
+                                return stats.customerComposition.map(c => {
+                                    const percent = ((c.value / total) * 100).toFixed(0);
+                                    return (
+                                        <div key={c.name} className="flex items-center justify-between text-xs">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }}></div>
+                                                <span className="font-bold text-slate-600 truncate">{c.name}</span>
+                                            </div>
+                                            <div className="text-right font-semibold text-slate-500 shrink-0">
+                                                <span>{percent}%</span>
+                                                <span className="text-[10px] text-slate-400 font-normal ml-1.5">({c.value})</span>
+                                            </div>
+                                        </div>
+                                    );
+                                });
+                            })()}
+                        </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-50 text-center">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                            Retention Index Score: {customers.length > 0 ? (sales.length / customers.length).toFixed(1) : '0'} transactions / customer
+                        </span>
+                    </div>
+                </Card>
             </div>
         </section>
 
