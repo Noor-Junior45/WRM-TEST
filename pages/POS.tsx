@@ -477,8 +477,12 @@ export const POS: React.FC = () => {
                     if (settings.soundEnabled) new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(() => {});
                     const product = products.find(p => p.sku === decodedText || p.id === decodedText);
                     if (product) { addToCart(product); setShowScanner(false); window.history.back(); }
-                    else if (confirm(`Product not found (${decodedText}). Add new?`)) { setShowScanner(false); setNewProduct(prev => ({ ...prev, sku: decodedText })); setIsCreatingProduct(true); setShowProductLookup(true); }
-                    else { setShowScanner(false); window.history.back(); }
+                    else { 
+                        setShowScanner(false); 
+                        setNewProduct(prev => ({ ...prev, sku: decodedText })); 
+                        setIsCreatingProduct(true); 
+                        setShowProductLookup(true); 
+                    }
                 }, () => {}).catch(console.error);
         }, 100);
         return () => { clearTimeout(timeoutId); html5QrCode?.isScanning && html5QrCode.stop(); };

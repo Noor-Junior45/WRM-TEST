@@ -1,17 +1,25 @@
 import { Product, Sale, Customer, Tag, StoreSettings, User, DeletedItem } from '../types';
-import { db, auth, storage } from './firebase';
+import { supabase } from './supabase';
 import { 
-  collection, 
-  doc, 
-  getDocs, 
-  setDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  writeBatch 
-} from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, uploadString } from 'firebase/storage';
+  productToDb, 
+  productFromDb, 
+  customerToDb, 
+  customerFromDb, 
+  saleToDb, 
+  saleFromDb, 
+  tagToDb, 
+  tagFromDb, 
+  settingsToDb, 
+  settingsFromDb, 
+  deletedItemToDb, 
+  deletedItemFromDb, 
+  staffToDb, 
+  staffFromDb, 
+  productHistoryToDb, 
+  productHistoryFromDb,
+  StaffRecord,
+  ProductHistoryRecord
+} from './mappers';
 
 interface StoreData {
   products: Product[];
@@ -39,8 +47,8 @@ const defaultSettings: StoreSettings = {
   scannerPreference: 'both',
   nasUrl: '',
   syncToNas: false,
-  warehouseType: 'general', // Default warehouse type
-  upiId: '', // Default merchant UPI ID
+  warehouseType: 'general', 
+  upiId: '', 
   salesTarget: 50000,
   receiptHeader: 'Thank you for your business!',
   receiptFooter: 'Please visit us again!',
@@ -70,37 +78,14 @@ const generateId = () => {
   });
 };
 
-enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
-
-function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-    },
-    operationType,
-    path
-  };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
-}
+let currentUid: string | null = null;
+supabase.auth.onAuthStateChange((_event, session) => {
+  currentUid = session?.user?.id || null;
+});
 
 const getUid = () => {
-  const uid = auth.currentUser?.uid;
-  if (!uid) {
-    return localStorage.getItem('noor_user_uid') || 'guest';
-  }
-  return uid;
+  if (currentUid) return currentUid;
+  return localStorage.getItem('noor_user_uid') || 'guest';
 };
 
 const StoreService = {
@@ -112,7 +97,7 @@ const StoreService = {
     if (cache) {
       localStorage.setItem(LS_BACKUP_KEY, JSON.stringify(cache));
       localStorage.setItem('noor_last_sync', new Date().toISOString());
-      // Back up to the local Node.js server storage so public invoices can be generated immediately
+      
       fetch('/api/storage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -135,28 +120,44 @@ const StoreService = {
         }
 
         try {
-            const [productsSnap, salesSnap, customersSnap, tagsSnap, settingsSnap, deletedSnap] = await Promise.all([
-                getDocs(query(collection(db, 'products'), where('userId', '==', uid))).catch(e => handleFirestoreError(e, OperationType.LIST, 'products')),
-                getDocs(query(collection(db, 'sales'), where('userId', '==', uid))).catch(e => handleFirestoreError(e, OperationType.LIST, 'sales')),
-                getDocs(query(collection(db, 'customers'), where('userId', '==', uid))).catch(e => handleFirestoreError(e, OperationType.LIST, 'customers')),
-                getDocs(query(collection(db, 'tags'), where('userId', '==', uid))).catch(e => handleFirestoreError(e, OperationType.LIST, 'tags')),
-                getDocs(query(collection(db, 'settings'), where('userId', '==', uid))).catch(e => handleFirestoreError(e, OperationType.LIST, 'settings')),
-                getDocs(query(collection(db, 'deletedItems'), where('userId', '==', uid))).catch(e => handleFirestoreError(e, OperationType.LIST, 'deletedItems'))
+            const [productsRes, salesRes, customersRes, tagsRes, settingsRes, deletedRes] = await Promise.all([
+                supabase.from('products').select('*').eq('user_id', uid),
+                supabase.from('sales').select('*').eq('user_id', uid),
+                supabase.from('customers').select('*').eq('user_id', uid),
+                supabase.from('tags').select('*').eq('user_id', uid),
+                supabase.from('settings').select('*').eq('user_id', uid),
+                supabase.from('deleted_items').select('*').eq('user_id', uid)
             ]);
 
-            const products = productsSnap ? productsSnap.docs.map(d => d.data() as Product) : [];
-            const sales = salesSnap ? salesSnap.docs.map(d => d.data() as Sale) : [];
-            const customers = customersSnap ? customersSnap.docs.map(d => d.data() as Customer) : [];
-            const tags = tagsSnap ? tagsSnap.docs.map(d => d.data() as Tag) : [];
-            const deletedItems = deletedSnap ? deletedSnap.docs.map(d => d.data() as DeletedItem) : [];
+            const products = (productsRes.data ?? []).map(productFromDb);
+            const sales = (salesRes.data ?? []).map(saleFromDb);
+            const customers = (customersRes.data ?? []).map(customerFromDb);
+            const tags = (tagsRes.data ?? []).map(tagFromDb);
+            const deletedItems = (deletedRes.data ?? []).map(deletedItemFromDb);
             
             let settings = defaultSettings;
-            if (settingsSnap && !settingsSnap.empty) {
-                settings = { ...defaultSettings, ...settingsSnap.docs[0].data() as StoreSettings };
+            try {
+                const local = localStorage.getItem(LS_BACKUP_KEY);
+                if (local) {
+                    const parsed = JSON.parse(local);
+                    if (parsed && parsed.settings) {
+                        settings = { ...defaultSettings, ...parsed.settings };
+                    }
+                }
+            } catch (e) {
+                console.warn("Failed to load local settings fallback:", e);
+            }
+
+            if (settingsRes.data && settingsRes.data.length > 0) {
+                settings = { ...settings, ...settingsFromDb(settingsRes.data[0]) };
             } else {
                 const settingsId = generateId();
-                const initialSettings = { ...defaultSettings, userId: uid, id: settingsId };
-                await setDoc(doc(db, 'settings', settingsId), initialSettings).catch(e => handleFirestoreError(e, OperationType.WRITE, `settings/${settingsId}`));
+                const initialSettings = { ...settings, userId: uid, id: settingsId };
+                try {
+                    await supabase.from('settings').upsert(settingsToDb(initialSettings, uid));
+                } catch (upsertErr) {
+                    console.warn("Failed to upsert default onboarding settings to cloud, keeping local configuration:", upsertErr);
+                }
                 settings = initialSettings;
             }
 
@@ -174,7 +175,7 @@ const StoreService = {
             localStorage.setItem('noor_last_sync', new Date().toISOString());
             resolve(cache);
         } catch (err) {
-            console.warn("Firestore fetch failed, using local cache fallback", err);
+            console.warn("Supabase fetch failed, using local cache fallback", err);
             const local = localStorage.getItem(LS_BACKUP_KEY);
             cache = local ? { ...defaultData, ...JSON.parse(local) } : JSON.parse(JSON.stringify(defaultData));
             resolve(cache as StoreData);
@@ -185,26 +186,45 @@ const StoreService = {
   },
 
   async saveData(): Promise<void> {
-    // Firestore writes are made eagerly in modifications, so saveData() acts to update cache locally
     this.saveToLocalCache();
   },
 
-  // Cloud Storage File Uploader
   async uploadFile(fileOrBase64: File | string, folder: string): Promise<string> {
     const uid = getUid();
     const filename = `${uid}_${Date.now()}_${generateId().substring(0, 8)}`;
-    const fileRef = ref(storage, `${folder}/${filename}`);
     
+    let fileOrBlob: any = fileOrBase64;
+    let contentType = 'image/jpeg';
     if (typeof fileOrBase64 === 'string') {
-      const base64Data = fileOrBase64.replace(/^data:.+;base64,/, '');
       const mimeMatch = fileOrBase64.match(/^data:(.+);base64,/);
-      const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-      await uploadString(fileRef, base64Data, 'base64', { contentType: mimeType }).catch(e => handleFirestoreError(e, OperationType.WRITE, `${folder}/${filename}`));
+      if (mimeMatch) {
+        contentType = mimeMatch[1];
+      }
+      const base64Data = fileOrBase64.replace(/^data:.+;base64,/, '');
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      fileOrBlob = new Blob([byteArray], { type: contentType });
     } else {
-      await uploadBytes(fileRef, fileOrBase64).catch(e => handleFirestoreError(e, OperationType.WRITE, `${folder}/${filename}`));
+      contentType = fileOrBase64.type || 'image/jpeg';
     }
     
-    return await getDownloadURL(fileRef);
+    const path = `${uid}/${folder}/${filename}`;
+    const { error } = await supabase.storage.from('uploads').upload(path, fileOrBlob, {
+      contentType: contentType,
+      upsert: true
+    });
+    
+    if (error) {
+      console.error("Storage upload error:", error);
+      throw error;
+    }
+    
+    const { data } = supabase.storage.from('uploads').getPublicUrl(path);
+    return data.publicUrl;
   },
 
   // Inventory Management
@@ -223,11 +243,11 @@ const StoreService = {
 
       // Log action
       const performer = localStorage.getItem('noor_user_name') || 'Admin';
-      this.logProductHistory(np.id, np.name, 'create', `Created product with initial stock: ${np.stock} and price: $${np.price}`, performer);
+      this.logProductHistory(np.id, np.name, 'create', `Created product with initial stock: ${np.stock} and price: $${np.sellPrice}`, performer);
 
-      // Trigger Firestore sync in the background
-      setDoc(doc(db, 'products', np.id), np)
-        .catch(e => console.error("Firestore sync failed for addProduct:", e));
+      // Trigger Supabase sync in the background
+      Promise.resolve(supabase.from('products').upsert(productToDb(np, uid)))
+        .catch(e => console.error("Supabase sync failed for addProduct:", e));
 
       return np; 
   },
@@ -244,14 +264,15 @@ const StoreService = {
         const performer = localStorage.getItem('noor_user_name') || 'Admin';
         const detailParts = [];
         if (updates.stock !== undefined) detailParts.push(`Stock: ${updates.stock}`);
-        if (updates.price !== undefined) detailParts.push(`Price: $${updates.price}`);
+        if (updates.sellPrice !== undefined) detailParts.push(`Price: $${updates.sellPrice}`);
         if (updates.name !== undefined) detailParts.push(`Name changed to: "${updates.name}"`);
         const details = detailParts.length > 0 ? `Updated fields: ${detailParts.join(', ')}` : 'Updated details';
         this.logProductHistory(id, updated.name, 'update', details, performer);
 
-        // Trigger Firestore sync in the background
-        setDoc(doc(db, 'products', id), updated)
-          .catch(e => console.error("Firestore sync failed for updateProduct:", e));
+        // Trigger Supabase sync in the background
+        const uid = getUid();
+        Promise.resolve(supabase.from('products').upsert(productToDb(updated, uid)))
+          .catch(e => console.error("Supabase sync failed for updateProduct:", e));
       }
   },
   
@@ -270,11 +291,11 @@ const StoreService = {
           const performer = localStorage.getItem('noor_user_name') || 'Admin';
           this.logProductHistory(p.id, p.name, 'delete', `Deleted product from warehouse (moved to recycle bin)`, performer);
 
-          // Trigger Firestore sync in the background
+          // Trigger Supabase sync in the background
           Promise.all([
-            setDoc(doc(db, 'deletedItems', delItem.id), { ...delItem, userId: uid }),
-            deleteDoc(doc(db, 'products', id))
-          ]).catch(e => console.error("Firestore sync failed for deleteProduct:", e));
+            supabase.from('deleted_items').upsert(deletedItemToDb(delItem, uid)),
+            supabase.from('products').delete().eq('id', id)
+          ]).catch(e => console.error("Supabase sync failed for deleteProduct:", e));
       }
   },
   
@@ -282,19 +303,20 @@ const StoreService = {
       const d = await this.loadData();
       const uid = getUid();
       const now = new Date().toISOString();
-      const batch = writeBatch(db);
       
+      const mappedItems: any[] = [];
       items.forEach(i => {
          const id = i.id || generateId();
          const np = { ...i, id, createdAt: now, userId: uid } as Product;
          d.products.push(np);
-         batch.set(doc(db, 'products', id), np);
+         mappedItems.push(productToDb(np, uid));
       });
       
       this.saveToLocalCache();
 
-      // Commit the batch in the background
-      batch.commit().catch(e => console.error("Firestore sync failed for batchAddProducts:", e));
+      // Upsert mappedItems to Supabase
+      Promise.resolve(supabase.from('products').upsert(mappedItems))
+        .catch(e => console.error("Supabase sync failed for batchAddProducts:", e));
   },
 
   // Sales Management
@@ -331,30 +353,26 @@ const StoreService = {
       
       this.saveToLocalCache(); 
 
-      // Sync to Firestore in the background
-      setDoc(doc(db, 'sales', ns.id), ns)
+      // Sync to Supabase in the background
+      Promise.resolve(supabase.from('sales').upsert(saleToDb(ns, uid)))
         .then(() => {
-            const batch = writeBatch(db);
-            s.items.forEach((item: any) => {
+            const productUpserts = s.items.map((item: any) => {
                 const updatedP = d.products.find(x => x.id === item.id);
                 if (updatedP) {
-                    batch.update(doc(db, 'products', item.id), { stock: updatedP.stock });
+                    return supabase.from('products').upsert(productToDb(updatedP, uid));
                 }
+                return Promise.resolve();
             });
+            let customerUpsert = Promise.resolve() as any;
             if (s.customerId) {
                 const c = d.customers.find(x => x.id === s.customerId);
                 if (c) {
-                    batch.update(doc(db, 'customers', c.id), { 
-                      totalSpent: c.totalSpent, 
-                      visitCount: c.visitCount, 
-                      totalDues: c.totalDues, 
-                      history: c.history 
-                    });
+                    customerUpsert = supabase.from('customers').upsert(customerToDb(c, uid));
                 }
             }
-            return batch.commit();
+            return Promise.all([...productUpserts, customerUpsert]);
         })
-        .catch(e => console.warn("Firestore sync failed for createSale, running in offline mode:", e));
+        .catch(e => console.warn("Supabase sync failed for createSale, running in offline mode:", e));
 
       return ns; 
   },
@@ -378,12 +396,14 @@ const StoreService = {
       this.saveToLocalCache();
 
       if (deletedSalesList.length > 0) {
-          const batch = writeBatch(db);
-          deletedSalesList.forEach(delItem => {
-              batch.set(doc(db, 'deletedItems', delItem.id), { ...delItem, userId: uid });
-              batch.delete(doc(db, 'sales', delItem.originalId));
-          });
-          batch.commit().catch(e => console.warn("Firestore sync failed for deleteSales, running in offline mode:", e));
+          const deletedUpserts = deletedSalesList.map(delItem => 
+              supabase.from('deleted_items').upsert(deletedItemToDb(delItem, uid))
+          );
+          const salesDeletes = deletedSalesList.map(delItem => 
+              supabase.from('sales').delete().eq('id', delItem.originalId)
+          );
+          Promise.all([...deletedUpserts, ...salesDeletes])
+             .catch(e => console.warn("Supabase sync failed for deleteSales, running in offline mode:", e));
       }
   },
   
@@ -393,8 +413,9 @@ const StoreService = {
       if (i > -1) { 
         d.sales[i] = sale; 
         this.saveToLocalCache(); 
-        setDoc(doc(db, 'sales', sale.id), sale)
-          .catch(e => console.warn("Firestore sync failed for updateSale, running in offline mode:", e));
+        const uid = getUid();
+        Promise.resolve(supabase.from('sales').upsert(saleToDb(sale, uid)))
+          .catch(e => console.warn("Supabase sync failed for updateSale, running in offline mode:", e));
       }
   },
 
@@ -420,8 +441,8 @@ const StoreService = {
       
       this.saveToLocalCache();
       
-      setDoc(doc(db, 'customers', updatedCustomer.id), updatedCustomer)
-        .catch(e => console.warn("Firestore sync failed for upsertCustomer, running in offline mode:", e));
+      Promise.resolve(supabase.from('customers').upsert(customerToDb(updatedCustomer, uid)))
+        .catch(e => console.warn("Supabase sync failed for upsertCustomer, running in offline mode:", e));
       return updatedCustomer;
   },
   
@@ -437,9 +458,9 @@ const StoreService = {
           this.saveToLocalCache();
 
           Promise.all([
-            setDoc(doc(db, 'deletedItems', delItem.id), { ...delItem, userId: uid }),
-            deleteDoc(doc(db, 'customers', id))
-          ]).catch(e => console.warn("Firestore sync failed for deleteCustomer, running in offline mode:", e));
+            supabase.from('deleted_items').upsert(deletedItemToDb(delItem, uid)),
+            supabase.from('customers').delete().eq('id', id)
+          ]).catch(e => console.warn("Supabase sync failed for deleteCustomer, running in offline mode:", e));
       }
   },
   
@@ -463,8 +484,9 @@ const StoreService = {
           
           this.saveToLocalCache();
 
-          setDoc(doc(db, 'customers', c.id), c)
-            .catch(e => console.warn("Firestore sync failed for addCustomerPayment, running in offline mode:", e));
+          const uid = getUid();
+          Promise.resolve(supabase.from('customers').upsert(customerToDb(c, uid)))
+            .catch(e => console.warn("Supabase sync failed for addCustomerPayment, running in offline mode:", e));
       }
   },
 
@@ -492,8 +514,8 @@ const StoreService = {
       this.saveToLocalCache(); 
       
       const settingsId = s.id || generateId();
-      setDoc(doc(db, 'settings', settingsId), { ...updatedSettings, id: settingsId })
-        .catch(e => console.warn("Firestore sync failed for saveSettings, running in offline mode:", e));
+      Promise.resolve(supabase.from('settings').upsert(settingsToDb({ ...updatedSettings, id: settingsId }, uid)))
+        .catch(e => console.warn("Supabase sync failed for saveSettings, running in offline mode:", e));
   },
   
   async getTags() { 
@@ -509,9 +531,8 @@ const StoreService = {
       d.tags.push(nt); 
       this.saveToLocalCache(); 
 
-      // Sync to Firestore in background
-      setDoc(doc(db, 'tags', nt.id), nt)
-        .catch(e => console.error("Firestore sync failed for addTag:", e));
+      Promise.resolve(supabase.from('tags').upsert(tagToDb(nt, uid)))
+        .catch(e => console.error("Supabase sync failed for addTag:", e));
 
       return nt; 
   },
@@ -524,9 +545,9 @@ const StoreService = {
         d.tags[i] = updated; 
         this.saveToLocalCache(); 
 
-        // Sync to Firestore in background
-        setDoc(doc(db, 'tags', id), updated)
-          .catch(e => console.error("Firestore sync failed for updateTag:", e));
+        const uid = getUid();
+        Promise.resolve(supabase.from('tags').upsert(tagToDb(updated, uid)))
+          .catch(e => console.error("Supabase sync failed for updateTag:", e));
       }
   },
   
@@ -537,9 +558,8 @@ const StoreService = {
         d.tags.splice(i, 1); 
         this.saveToLocalCache(); 
 
-        // Sync to Firestore in background
-        deleteDoc(doc(db, 'tags', id))
-          .catch(e => console.error("Firestore sync failed for deleteTag:", e));
+        Promise.resolve(supabase.from('tags').delete().eq('id', id))
+          .catch(e => console.error("Supabase sync failed for deleteTag:", e));
       }
   },
 
@@ -566,16 +586,18 @@ const StoreService = {
           
           this.saveToLocalCache();
 
-          const batch = writeBatch(db);
+          const promises: Promise<any>[] = [
+              supabase.from('deleted_items').delete().eq('id', id)
+          ];
           if (item.type === 'product') {
-             batch.set(doc(db, 'products', item.data.id), { ...item.data, userId: uid });
+             promises.push(supabase.from('products').upsert(productToDb(item.data, uid)));
           } else if (item.type === 'customer') {
-             batch.set(doc(db, 'customers', item.data.id), { ...item.data, userId: uid });
+             promises.push(supabase.from('customers').upsert(customerToDb(item.data, uid)));
           } else if (item.type === 'sale') {
-             batch.set(doc(db, 'sales', item.data.id), { ...item.data, userId: uid });
+             promises.push(supabase.from('sales').upsert(saleToDb(item.data, uid)));
           }
-          batch.delete(doc(db, 'deletedItems', id));
-          batch.commit().catch(e => console.warn("Firestore sync failed for restoreItem, running in offline mode:", e));
+          Promise.all(promises)
+             .catch(e => console.warn("Supabase sync failed for restoreItem, running in offline mode:", e));
       }
   },
   
@@ -583,7 +605,8 @@ const StoreService = {
       const d = await this.loadData();
       d.deletedItems = d.deletedItems.filter(x => x.id !== id);
       this.saveToLocalCache();
-      deleteDoc(doc(db, 'deletedItems', id)).catch(e => console.warn("Firestore sync failed for permanentlyDelete, running in offline mode:", e));
+      Promise.resolve(supabase.from('deleted_items').delete().eq('id', id))
+         .catch(e => console.warn("Supabase sync failed for permanentlyDelete, running in offline mode:", e));
   },
   
   async emptyRecycleBin() { 
@@ -592,11 +615,11 @@ const StoreService = {
       d.deletedItems = []; 
       this.saveToLocalCache(); 
 
-      const batch = writeBatch(db);
-      itemsToDelete.forEach(item => {
-         batch.delete(doc(db, 'deletedItems', item.id));
-      });
-      batch.commit().catch(e => console.warn("Firestore sync failed for emptyRecycleBin, running in offline mode:", e));
+      const promises = itemsToDelete.map(item => 
+          supabase.from('deleted_items').delete().eq('id', item.id)
+      );
+      Promise.all(promises)
+         .catch(e => console.warn("Supabase sync failed for emptyRecycleBin, running in offline mode:", e));
   },
   
   async getRawData() { 
@@ -620,13 +643,11 @@ const StoreService = {
   },
   
   async getCloudBackups(): Promise<any[]> {
-      return []; // Replaced by standard real-time Firestore synchronization
+      return []; 
   },
   async createCloudBackup() {
-      // Replaced by standard real-time Firestore synchronization
   },
-  async restoreCloudBackup(fileId: string) {
-      // Replaced by standard real-time Firestore synchronization
+  async restoreCloudBackup(_fileId: string) {
   },
 
   // POS State
@@ -646,60 +667,71 @@ const StoreService = {
     const uid = getUid();
     if (!uid || uid === 'guest') return [];
     try {
-        const snap = await getDocs(query(collection(db, 'staff'), where('userId', '==', uid)));
-        return snap.docs.map(d => d.data());
+        const { data, error } = await supabase.from('staff').select('*').eq('user_id', uid);
+        if (error) throw error;
+        return (data ?? []).map(staffFromDb);
     } catch (error) {
         console.warn("Error getting staff members:", error);
         return [];
     }
   },
 
-  async addStaffMember(staff: { id: string; name: string; pin: string; role: 'pos' | 'inventory' }) {
+  async addStaffMember(staff: StaffRecord) {
     const uid = getUid();
-    const adminEmail = auth.currentUser?.email || '';
+    const session = (await supabase.auth.getSession()).data.session;
+    const adminEmail = session?.user?.email || '';
     const staffDoc = { ...staff, userId: uid, adminEmail, createdAt: new Date().toISOString() };
-    await setDoc(doc(db, 'staff', staff.id), staffDoc).catch(e => console.warn("Firestore sync failed for addStaffMember:", e));
+    
+    Promise.resolve(supabase.from('staff').upsert(staffToDb(staffDoc, uid)))
+      .catch(e => console.warn("Supabase sync failed for addStaffMember:", e));
     return staffDoc;
   },
 
-  async updateStaffMember(staffId: string, updates: Partial<{ name: string; pin: string; role: 'pos' | 'inventory' }>) {
-    await updateDoc(doc(db, 'staff', staffId), updates).catch(e => console.warn("Firestore sync failed for updateStaffMember:", e));
+  async updateStaffMember(staffId: string, updates: Partial<StaffRecord>) {
+    const uid = getUid();
+    const d = await supabase.from('staff').select('*').eq('id', staffId).single();
+    if (d.data) {
+       const merged = { ...staffFromDb(d.data), ...updates };
+       await Promise.resolve(supabase.from('staff').upsert(staffToDb(merged, uid)))
+          .catch(e => console.warn("Supabase sync failed for updateStaffMember:", e));
+    }
   },
 
   async deleteStaffMember(staffId: string) {
-    await deleteDoc(doc(db, 'staff', staffId)).catch(e => console.warn("Firestore sync failed for deleteStaffMember:", e));
+    await Promise.resolve(supabase.from('staff').delete().eq('id', staffId))
+       .catch(e => console.warn("Supabase sync failed for deleteStaffMember:", e));
   },
 
   async loginStaff(adminEmailOrId: string, staffId: string, pin: string): Promise<{ staff: any; adminUid: string } | null> {
     try {
-        const q = query(
-          collection(db, 'staff'), 
-          where('id', '==', staffId), 
-          where('pin', '==', pin)
-        );
-        const snap = await getDocs(q);
-        if (snap.empty) {
+        const { data, error } = await supabase.from('staff')
+          .select('*')
+          .eq('id', staffId)
+          .eq('pin', pin);
+        
+        if (error || !data || data.length === 0) {
             return null;
         }
         
-        // Find the staff doc that belongs to this admin's DB (if adminEmailOrId is provided, we can verify)
-        let docData = snap.docs[0].data();
+        let docData = staffFromDb(data[0]);
         if (adminEmailOrId) {
             const cleanId = adminEmailOrId.trim().toLowerCase();
-            const matchedDoc = snap.docs.find(d => {
-                const s = d.data();
-                return (s.userId && s.userId.toLowerCase() === cleanId) || 
-                       (s.adminEmail && s.adminEmail.toLowerCase() === cleanId) ||
-                       (s.userId === adminEmailOrId.trim());
+            const matchedRow = data.find(row => {
+                const s = staffFromDb(row);
+                const rUserId = row.user_id || '';
+                const rAdminEmail = row.admin_email || '';
+                return (rUserId.toLowerCase() === cleanId) || 
+                       (rAdminEmail.toLowerCase() === cleanId) ||
+                       (rUserId === adminEmailOrId.trim());
             });
-            if (matchedDoc) {
-                docData = matchedDoc.data();
+            if (matchedRow) {
+                docData = staffFromDb(matchedRow);
             } else {
                 return null;
             }
         }
         
-        const adminUid = docData.userId;
+        const adminUid = (data[0] as any).user_id;
         return { staff: docData, adminUid };
     } catch (error) {
         console.warn("Staff login failed:", error);
@@ -711,26 +743,26 @@ const StoreService = {
   async logProductHistory(productId: string, productName: string, action: 'create' | 'update' | 'delete', details: string, performedBy: string) {
     const uid = getUid();
     const historyId = generateId();
-    const logEntry = {
+    const logEntry: ProductHistoryRecord = {
         id: historyId,
         productId,
         productName,
         action,
         details,
         timestamp: new Date().toISOString(),
-        userId: uid,
         performedBy: performedBy || 'System'
     };
-    setDoc(doc(db, 'productHistory', historyId), logEntry)
-      .catch(e => console.warn("Firestore sync failed for logProductHistory:", e));
+    Promise.resolve(supabase.from('product_history').upsert(productHistoryToDb(logEntry, uid)))
+      .catch(e => console.warn("Supabase sync failed for logProductHistory:", e));
   },
 
   async getProductHistory(): Promise<any[]> {
     const uid = getUid();
     if (!uid || uid === 'guest') return [];
     try {
-        const snap = await getDocs(query(collection(db, 'productHistory'), where('userId', '==', uid)));
-        const history = snap.docs.map(d => d.data());
+        const { data, error } = await supabase.from('product_history').select('*').eq('user_id', uid);
+        if (error) throw error;
+        const history = (data ?? []).map(productHistoryFromDb);
         return history.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     } catch (error) {
         console.warn("Error fetching product history:", error);
@@ -741,7 +773,7 @@ const StoreService = {
   async logout() { 
     localStorage.clear(); 
     try {
-        await auth.signOut();
+        await supabase.auth.signOut();
     } catch (e) {
         console.warn("Sign-out failed:", e);
     }

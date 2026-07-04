@@ -68,10 +68,15 @@ export default async function handler(req, res) {
 
     res.status(200).json({ insight: response.text });
   } catch (error) {
-    console.warn("Server API Error (Handled gracefully):", error.message || error);
+    const errMsg = error.message || String(error);
+    if (errMsg.includes("API key not valid") || errMsg.includes("API_KEY_INVALID") || errMsg.includes("INVALID_ARGUMENT")) {
+      console.warn("Server API: Gemini API key is not configured or is invalid. Running in local fallback mode.");
+    } else {
+      console.warn("Server API Error (Handled gracefully):", errMsg);
+    }
     res.status(200).json({ 
       insight: "AI Insights are temporarily unavailable. Noor POS system continues operating offline normally.",
-      error: error.message || "Internal Server Error"
+      error: "Gemini API key is not configured or is invalid. Running in local fallback mode."
     });
   }
 }

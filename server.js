@@ -21,12 +21,6 @@ app.use(express.json({ limit: '20mb' })); // Increased limit for large backups
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
 // API Routes
-app.all('/api/analyze', analyzeHandler);
-app.all('/api/parse-invoice', parseInvoiceHandler);
-app.all('/api/storage', storageHandler);
-app.all('/api/parse-query', parseQueryHandler);
-
-// Authorized Crawler/System Login
 app.post('/api/crawler-login', (req, res) => {
   const { username, password } = req.body;
   if (username === 'admin' && password === 'noorpos_system_2025') {
@@ -35,6 +29,11 @@ app.post('/api/crawler-login', (req, res) => {
     res.status(401).send('<h1>401 Unauthorized</h1><p>Invalid credentials.</p>');
   }
 });
+
+app.all('/api/analyze', analyzeHandler);
+app.all('/api/parse-invoice', parseInvoiceHandler);
+app.all('/api/storage', storageHandler);
+app.all('/api/parse-query', parseQueryHandler);
 
 // Serve static assets or mount Vite middleware depending on environment
 if (process.env.NODE_ENV !== "production") {

@@ -1,8 +1,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Tab, User } from './types';
 import { Package, ShoppingCart, Users, User as UserIcon, LayoutDashboard } from 'lucide-react';
-import { auth } from './services/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { supabase } from './services/supabase';
 import { LoadingSpinner } from './components/UI';
 
 // Pages
@@ -87,18 +86,19 @@ const App: React.FC = () => {
         return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const supabaseUser = session?.user;
+      if (supabaseUser) {
         const user: User = {
-          id: firebaseUser.uid,
-          username: (firebaseUser.email || firebaseUser.uid).split('@')[0],
-          name: firebaseUser.displayName || (firebaseUser.email || firebaseUser.uid).split('@')[0],
+          id: supabaseUser.id,
+          username: (supabaseUser.email || supabaseUser.id).split('@')[0],
+          name: supabaseUser.user_metadata?.name || supabaseUser.user_metadata?.username || (supabaseUser.email || supabaseUser.id).split('@')[0],
           role: 'admin',
           pin: '',
-          photoURL: firebaseUser.photoURL || undefined
+          photoURL: supabaseUser.user_metadata?.avatar_url || undefined
         };
         setCurrentUser(user);
-        localStorage.setItem('noor_user_uid', firebaseUser.uid);
+        localStorage.setItem('noor_user_uid', supabaseUser.id);
         localStorage.removeItem('noor_staff_user');
       } else {
         const savedStaffStr = localStorage.getItem('noor_staff_user');
@@ -115,22 +115,31 @@ const App: React.FC = () => {
         }
       }
       setIsCheckingAuth(false);
-    }, (error) => {
-      console.warn("Auth check failed (possibly suspended or network issue):", error);
-      const savedStaffStr = localStorage.getItem('noor_staff_user');
-      if (savedStaffStr) {
-        try {
-          setCurrentUser(JSON.parse(savedStaffStr));
-        } catch (e) {
-          setCurrentUser(null);
-        }
-      } else {
-        setCurrentUser(null);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const supabaseUser = session.user;
+        const user: User = {
+          id: supabaseUser.id,
+          username: (supabaseUser.email || supabaseUser.id).split('@')[0],
+          name: supabaseUser.user_metadata?.name || supabaseUser.user_metadata?.username || (supabaseUser.email || supabaseUser.id).split('@')[0],
+          role: 'admin',
+          pin: '',
+          photoURL: supabaseUser.user_metadata?.avatar_url || undefined
+        };
+        setCurrentUser(user);
+        localStorage.setItem('noor_user_uid', supabaseUser.id);
+        localStorage.removeItem('noor_staff_user');
       }
+      setIsCheckingAuth(false);
+    }).catch(() => {
       setIsCheckingAuth(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const handleLogin = (user: User) => setCurrentUser(user);

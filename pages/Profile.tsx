@@ -78,6 +78,24 @@ export const Profile: React.FC<ProfileProps> = ({ user, onLogin, onLogout }) => 
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [sessionLocked, setSessionLocked] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void | Promise<void>;
+  } | null>(null);
+
+  const requestConfirmation = (title: string, message: string, onConfirm: () => void | Promise<void>) => {
+    setConfirmDialog({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: async () => {
+        await onConfirm();
+        setConfirmDialog(null);
+      }
+    });
+  };
 
   // Gesture State
   const [touchStart, setTouchStart] = useState<{x: number, y: number} | null>(null);
@@ -200,11 +218,15 @@ export const Profile: React.FC<ProfileProps> = ({ user, onLogin, onLogout }) => 
       setShowStaffModal(true);
   };
 
-  const handleDeleteStaff = async (staffId: string) => {
-      if (confirm("Are you sure you want to delete this staff member? They will lose access immediately.")) {
-          await StoreService.deleteStaffMember(staffId);
-          loadData();
-      }
+  const handleDeleteStaff = (staffId: string) => {
+      requestConfirmation(
+          "Delete Staff Member",
+          "Are you sure you want to delete this staff member? They will lose access immediately.",
+          async () => {
+              await StoreService.deleteStaffMember(staffId);
+              loadData();
+          }
+      );
   };
 
   const handleVerifyStaffPin = () => {
@@ -311,10 +333,14 @@ export const Profile: React.FC<ProfileProps> = ({ user, onLogin, onLogout }) => 
   };
 
   const handleClearShiftHistory = () => {
-      if (confirm("Are you sure you want to delete all shift records? This is permanent.")) {
-          setShiftHistory([]);
-          localStorage.removeItem('noor_shift_history');
-      }
+      requestConfirmation(
+          "Clear Shift Records",
+          "Are you sure you want to delete all shift records? This is permanent.",
+          () => {
+              setShiftHistory([]);
+              localStorage.removeItem('noor_shift_history');
+          }
+      );
   };
 
   const handleRestoreItem = async (id: string) => {
@@ -322,18 +348,26 @@ export const Profile: React.FC<ProfileProps> = ({ user, onLogin, onLogout }) => 
       loadData();
   };
 
-  const handlePermanentDelete = async (id: string) => {
-      if(confirm("Delete this item permanently? This cannot be undone.")) {
-          await StoreService.permanentlyDelete(id);
-          loadData();
-      }
+  const handlePermanentDelete = (id: string) => {
+      requestConfirmation(
+          "Permanently Delete Item",
+          "Delete this item permanently? This cannot be undone.",
+          async () => {
+              await StoreService.permanentlyDelete(id);
+              loadData();
+          }
+      );
   };
 
-  const handleEmptyBin = async () => {
-      if(confirm("Are you sure? This will permanently remove all items in the recycle bin.")) {
-          await StoreService.emptyRecycleBin();
-          loadData();
-      }
+  const handleEmptyBin = () => {
+      requestConfirmation(
+          "Empty Recycle Bin",
+          "Are you sure? This will permanently remove all items in the recycle bin.",
+          async () => {
+              await StoreService.emptyRecycleBin();
+              loadData();
+          }
+      );
   };
 
   const groupedDeletedItems = useMemo(() => {
@@ -413,11 +447,15 @@ export const Profile: React.FC<ProfileProps> = ({ user, onLogin, onLogout }) => 
       setStoreSettings(newSettings);
   };
   
-  const handleLogout = async () => {
-      if (confirm("Sign out?")) {
-          await StoreService.logout();
-          onLogout();
-      }
+  const handleLogout = () => {
+      requestConfirmation(
+          "Sign Out",
+          "Are you sure you want to sign out? Any local unsaved cache changes might be cleared.",
+          async () => {
+              await StoreService.logout();
+              onLogout();
+          }
+      );
   };
   
   const handleExport = async () => {
@@ -437,12 +475,16 @@ export const Profile: React.FC<ProfileProps> = ({ user, onLogin, onLogout }) => 
       const file = e.target.files?.[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = async (e) => {
+      reader.onload = (readerEvent) => {
           try {
-              const json = JSON.parse(e.target?.result as string);
-              if (confirm("Overwrite data?")) {
-                   await StoreService.importData(json);
-              }
+              const json = JSON.parse(readerEvent.target?.result as string);
+              requestConfirmation(
+                  "Overwrite Store Data",
+                  "Are you sure you want to overwrite your current store database with this backup file? This action is permanent and cannot be undone.",
+                  async () => {
+                      await StoreService.importData(json);
+                  }
+              );
           } catch (err) { alert("Invalid file."); }
       };
       reader.readAsText(file);
@@ -1516,6 +1558,38 @@ export const Profile: React.FC<ProfileProps> = ({ user, onLogin, onLogout }) => 
                     </Button>
                 </div>
             </form>
+        </Modal>
+
+        {/* --- CUSTOM CONFIRMATION MODAL --- */}
+        <Modal 
+            isOpen={confirmDialog?.isOpen || false} 
+            onClose={() => setConfirmDialog(null)} 
+            title={confirmDialog?.title || "Confirm Action"}
+        >
+            <div className="space-y-6">
+                <p className="text-sm text-gray-600 leading-relaxed font-semibold">
+                    {confirmDialog?.message}
+                </p>
+                <div className="flex gap-3">
+                    <Button 
+                        variant="neutral" 
+                        className="flex-1 py-3 font-bold uppercase text-xs" 
+                        onClick={() => setConfirmDialog(null)}
+                    >
+                        Cancel
+                    </Button>
+                    <Button 
+                        className="flex-1 py-3 font-bold uppercase text-xs bg-indigo-600 hover:bg-indigo-700 text-white border-0" 
+                        onClick={() => {
+                            if (confirmDialog?.onConfirm) {
+                                confirmDialog.onConfirm();
+                            }
+                        }}
+                    >
+                        Confirm
+                    </Button>
+                </div>
+            </div>
         </Modal>
 
         <div className="text-center text-xs text-gray-400 pt-8 pb-4">Noor POS v1.6.3</div>
