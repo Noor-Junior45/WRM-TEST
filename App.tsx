@@ -86,35 +86,39 @@ const App: React.FC = () => {
         return;
     }
 
+    // Safe onAuthStateChange - async work should be wrapped in IIFE to prevent deadlock
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const supabaseUser = session?.user;
-      if (supabaseUser) {
-        const user: User = {
-          id: supabaseUser.id,
-          username: (supabaseUser.email || supabaseUser.id).split('@')[0],
-          name: supabaseUser.user_metadata?.name || supabaseUser.user_metadata?.username || (supabaseUser.email || supabaseUser.id).split('@')[0],
-          role: 'admin',
-          pin: '',
-          photoURL: supabaseUser.user_metadata?.avatar_url || undefined
-        };
-        setCurrentUser(user);
-        localStorage.setItem('noor_user_uid', supabaseUser.id);
-        localStorage.removeItem('noor_staff_user');
-      } else {
-        const savedStaffStr = localStorage.getItem('noor_staff_user');
-        if (savedStaffStr) {
-          try {
-            setCurrentUser(JSON.parse(savedStaffStr));
-          } catch (e) {
+      // Wrap in IIFE for safety - prevents deadlock if async work is added later
+      (async () => {
+        const supabaseUser = session?.user;
+        if (supabaseUser) {
+          const user: User = {
+            id: supabaseUser.id,
+            username: (supabaseUser.email || supabaseUser.id).split('@')[0],
+            name: supabaseUser.user_metadata?.name || supabaseUser.user_metadata?.username || (supabaseUser.email || supabaseUser.id).split('@')[0],
+            role: 'admin',
+            pin: '',
+            photoURL: supabaseUser.user_metadata?.avatar_url || undefined
+          };
+          setCurrentUser(user);
+          localStorage.setItem('noor_user_uid', supabaseUser.id);
+          localStorage.removeItem('noor_staff_user');
+        } else {
+          const savedStaffStr = localStorage.getItem('noor_staff_user');
+          if (savedStaffStr) {
+            try {
+              setCurrentUser(JSON.parse(savedStaffStr));
+            } catch (e) {
+              setCurrentUser(null);
+              localStorage.removeItem('noor_user_uid');
+            }
+          } else {
             setCurrentUser(null);
             localStorage.removeItem('noor_user_uid');
           }
-        } else {
-          setCurrentUser(null);
-          localStorage.removeItem('noor_user_uid');
         }
-      }
-      setIsCheckingAuth(false);
+        setIsCheckingAuth(false);
+      })();
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {

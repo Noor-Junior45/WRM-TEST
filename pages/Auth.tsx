@@ -2,22 +2,18 @@ import React, { useState } from 'react';
 import { User } from '../types';
 import { supabase } from '../services/supabase';
 import { StoreService } from '../services/storeService';
-import { 
-  Loader2, 
-  AlertTriangle, 
-  User as UserIcon, 
-  Mail, 
-  Lock, 
-  ShieldCheck, 
-  ArrowRight, 
-  Store, 
-  MapPin, 
-  Phone, 
-  ArrowLeft, 
-  Check, 
-  Sparkles,
-  Users,
-  ShieldAlert
+import {
+  Loader2,
+  AlertTriangle,
+  User as UserIcon,
+  Mail,
+  Lock,
+  ShieldCheck,
+  ArrowRight,
+  Store,
+  MapPin,
+  Phone,
+  Check
 } from 'lucide-react';
 
 interface AuthProps {
@@ -27,9 +23,8 @@ interface AuthProps {
 export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   // Navigation & Form Views
   const [selectedRole, setSelectedRole] = useState<'admin' | 'staff' | null>(null);
-  const [showEmailForm, setShowEmailForm] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  
+
   // Auth Form Fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -113,30 +108,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     } catch (err) {
       console.error('Error checking new user settings:', err);
       return false; // Safe default
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin
-        }
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      console.error(err);
-      const errMsg = err.message || '';
-      if (errMsg.toLowerCase().includes('suspended') || errMsg.toLowerCase().includes('permission')) {
-        setError('Cloud service is temporarily suspended. Please use the "Run Sandbox Demo Mode" button below to access your local offline database.');
-      } else {
-        setError('Google Sign-In failed: ' + err.message);
-      }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -648,75 +619,16 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                 </button>
               </form>
             </div>
-          ) : !showEmailForm ? (
-            /* --- LANDING STATE WITH GOOGLE AUTH FIRST --- */
-            <div className="space-y-5">
-              <div className="text-center mb-4">
-                <h2 className="text-sm font-bold text-zinc-300 uppercase tracking-widest">Admin Sign In</h2>
-                <p className="text-xs text-zinc-500 mt-1">Manage warehouse settings, products, and staff roles</p>
-              </div>
-
-              {/* Google Sign-In Button */}
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-3 bg-zinc-900 hover:bg-zinc-800/80 text-zinc-100 font-bold py-3 px-4 rounded-xl border border-zinc-800 transition-all shadow-sm active:scale-95 cursor-pointer"
-              >
-                {loading ? (
-                  <Loader2 size={20} className="animate-spin text-zinc-500" />
-                ) : (
-                  <>
-                    <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
-                      <g transform="matrix(1, 0, 0, 1, 0, 0)">
-                        <path d="M21.35,11.1H12v2.7h5.38C16.88,16.22,14.73,18,12,18c-3.31,0-6-2.69-6-6s2.69-6,6-6c1.47,0,2.81,0.54,3.86,1.44l2.03-2.03C16.21,3.77,14.22,3,12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9c4.8,0,8.44-3.38,8.44-8.4C20.44,12.01,20.4,11.54,21.35,11.1z" fill="#3ecf8e" />
-                        <path d="M12,21c2.44,0,4.72-0.89,6.4-2.4l-3.04-2.36C14.39,16.85,13.25,17.1,12,17.1c-2.48,0-4.6-1.68-5.35-3.94l-3.12,2.41C5.02,18.9,8.23,21,12,21z" fill="#10b981" />
-                        <path d="M6.65,13.16C6.46,12.79,6.35,12.4,6.35,12s0.11-0.79,0.3-1.16L3.53,8.43C2.9,9.64,2.5,11.02,2.5,12.5s0.4,2.86,1.03,4.07L6.65,13.16z" fill="#059669" />
-                        <path d="M12,6.9c1.33,0,2.53,0.46,3.47,1.36l2.6-2.6C16.48,4.1,14.39,3.5,12,3.5C8.23,3.5,5.02,5.6,3.53,8.93l3.12,2.41C7.4,9.08,9.52,6.9,12,6.9z" fill="#34d399" />
-                      </g>
-                    </svg>
-                    <span>Continue with Google</span>
-                  </>
-                )}
-              </button>
-
-              <div className="relative flex py-1 items-center">
-                <div className="flex-grow border-t border-zinc-800"></div>
-                <span className="flex-shrink mx-4 text-zinc-500 text-[10px] font-bold uppercase tracking-widest">or</span>
-                <div className="flex-grow border-t border-zinc-800"></div>
-              </div>
-
-              {/* Email & Password Trigger Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setShowEmailForm(true);
-                  setIsSignUp(false);
-                }}
-                className="w-full flex items-center justify-center gap-2 bg-zinc-900/50 hover:bg-zinc-800/80 text-zinc-100 font-bold py-3 px-4 rounded-xl border border-zinc-800 transition-all text-sm cursor-pointer"
-              >
-                <Mail size={18} className="text-[#3ecf8e]" />
-                <span>Continue with Email & Password</span>
-              </button>
-            </div>
           ) : (
-            /* --- EMAIL & PASSWORD INPUT STATE --- */
+            /* --- ADMIN EMAIL & PASSWORD LOGIN FORM --- */
             <div>
-              <div className="flex items-center justify-between mb-5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEmailForm(false);
-                    setError('');
-                  }}
-                  className="p-1.5 hover:bg-zinc-900 rounded-lg text-zinc-400 transition-colors cursor-pointer"
-                >
-                  <ArrowLeft size={18} />
-                </button>
+              <div className="text-center mb-5">
                 <h2 className="text-sm font-bold text-zinc-300 uppercase tracking-widest">
-                  {isSignUp ? 'Create Account' : 'Welcome Back'}
+                  {isSignUp ? 'Create Account' : 'Admin Sign In'}
                 </h2>
-                <div className="w-8"></div>
+                <p className="text-xs text-zinc-500 mt-1">
+                  {isSignUp ? 'Set up your warehouse account' : 'Manage warehouse settings, products, and staff roles'}
+                </p>
               </div>
 
               <form onSubmit={handleAuth} className="space-y-4">
