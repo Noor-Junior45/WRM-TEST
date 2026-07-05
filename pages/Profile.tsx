@@ -63,7 +63,6 @@ const SettingRow: React.FC<SettingRowProps> = ({
                     </div>
                     <div className="min-w-0 text-left">
                         <h4 className="font-bold text-gray-900 text-sm tracking-tight">{title}</h4>
-                        <p className="text-[11px] text-gray-500 mt-0.5 font-medium truncate sm:whitespace-normal">{description}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 pl-2">
@@ -1381,11 +1380,11 @@ export const Profile: React.FC<ProfileProps> = ({ user, onLogin, onLogout }) => 
         {/* ==========================================
             GROUP 3: SYSTEM PREFERENCES & CONFIGURATIONS
             ========================================== */}
-        <div className="space-y-2">
+        <div className="space-y-3">
             <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5 px-1">System Preferences & Settings</div>
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden divide-y divide-slate-50">
-                
-                {/* 3.1 General App Preferences */}
+            
+            {/* 3.1 General App Preferences */}
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
                 <SettingRow
                     icon={Settings}
                     iconBg="bg-indigo-50"
@@ -1453,8 +1452,10 @@ export const Profile: React.FC<ProfileProps> = ({ user, onLogin, onLogout }) => 
 
                     </div>
                 </SettingRow>
+            </div>
 
-                {/* 3.2 Stock & Expiry Notice Rules */}
+            {/* 3.2 Stock & Expiry Notice Rules */}
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
                 <SettingRow
                     icon={Bell}
                     iconBg="bg-violet-50"
@@ -1498,8 +1499,10 @@ export const Profile: React.FC<ProfileProps> = ({ user, onLogin, onLogout }) => 
                         </div>
                     </div>
                 </SettingRow>
+            </div>
 
-                {/* 3.5 Individual Product stock limits */}
+            {/* 3.5 Individual Product stock limits */}
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
                 <SettingRow
                     icon={Box}
                     iconBg="bg-blue-50"
@@ -1535,8 +1538,8 @@ export const Profile: React.FC<ProfileProps> = ({ user, onLogin, onLogout }) => 
                         </div>
                     </div>
                 </SettingRow>
-
             </div>
+
         </div>
 
         {/* ==========================================
