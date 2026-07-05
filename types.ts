@@ -132,7 +132,6 @@ export interface DeletedItem {
 
 export enum Tab {
   WAREHOUSE = 'WAREHOUSE',
-  POS = 'POS',
   DASHBOARD = 'DASHBOARD',
   CUSTOMERS = 'CUSTOMERS',
   PROFILE = 'PROFILE'

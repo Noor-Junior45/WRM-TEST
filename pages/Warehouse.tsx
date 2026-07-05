@@ -1396,31 +1396,39 @@ export const Warehouse: React.FC<WarehouseProps> = ({ initialAction, onClearActi
                   {/* Top Fixed/Sticky Navbar */}
                   <div id="warehouse-navbar" className="sticky top-0 z-30 -mx-4 -mt-4 px-4 py-3 md:-mx-6 md:-mt-6 md:px-6 bg-gradient-to-r from-emerald-50/80 via-white/90 to-white/95 backdrop-blur-md border-b border-emerald-100/60 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4 mb-6 shadow-[0_1px_3px_rgba(16,185,129,0.05)]">
                       {/* Left Side: Stock Info & SubTabs Toggle */}
-                      <div id="warehouse-left" className="flex items-center justify-between md:justify-start gap-4 w-full md:w-auto shrink-0 select-none">
-                          <div className="flex items-center gap-2.5">
-                              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-xl shadow-md shadow-emerald-500/35"><Box size={18} /></div>
-                              <div className="text-left">
-                                  <h2 className="text-sm font-extrabold text-slate-800 leading-tight">Stock</h2>
-                                  <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">
-                                      {activeTab === SubTab.PRODUCTS ? `${products.length} Products` : `${tags.length} Categories`}
-                                  </p>
-                              </div>
-                          </div>
-                          
+                      <div id="warehouse-left" className="flex items-center justify-between md:justify-start gap-4 sm:gap-5 w-full md:w-auto shrink-0 select-none">
                           {/* Elegant segment controller for SubTabs */}
-                          <div className="bg-slate-100/80 p-0.5 rounded-full flex items-center text-[11px] font-bold shadow-inner">
+                          <div className="bg-slate-100/95 border border-slate-200/40 p-1 rounded-full flex items-center text-[10px] sm:text-[11px] font-black shadow-inner shrink-0 ml-3.5 sm:ml-0 transition-all duration-300">
                               <button 
                                   onClick={() => { setActiveTab(SubTab.PRODUCTS); setSearchTerm(''); }} 
-                                  className={`px-3 py-1 rounded-full transition-all cursor-pointer ${activeTab === SubTab.PRODUCTS ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                                  className={`px-3 sm:px-4 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${activeTab === SubTab.PRODUCTS ? 'bg-white text-emerald-700 shadow-[0_2px_6px_rgba(16,185,129,0.08)] border border-slate-100 font-black scale-[1.02]' : 'text-slate-500 hover:text-slate-800 font-semibold'}`}
                               >
                                   Products
                               </button>
                               <button 
                                   onClick={() => { setActiveTab(SubTab.TAGS); setSearchTerm(''); }} 
-                                  className={`px-3 py-1 rounded-full transition-all cursor-pointer ${activeTab === SubTab.TAGS ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                                  className={`px-3 sm:px-4 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${activeTab === SubTab.TAGS ? 'bg-white text-emerald-700 shadow-[0_2px_6px_rgba(16,185,129,0.08)] border border-slate-100 font-black scale-[1.02]' : 'text-slate-500 hover:text-slate-800 font-semibold'}`}
                               >
                                   Categories
                               </button>
+                          </div>
+
+                          {/* Elegant vertical spacer */}
+                          <div className="hidden sm:block h-6 w-[1px] bg-slate-200/70 shrink-0" />
+
+                          {/* Refined Stock Indicator with modern numeric counts */}
+                          <div className="flex items-center gap-2 pr-3.5 sm:pr-0">
+                              <div className="text-left shrink-0">
+                                  <div className="flex items-center gap-1.5">
+                                      <span className="text-xs font-black text-slate-800 tracking-tight uppercase">Stock</span>
+                                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-extrabold border border-emerald-100/60 shadow-sm">
+                                          {activeTab === SubTab.PRODUCTS ? products.length : tags.length}
+                                      </span>
+                                  </div>
+                                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                                      {activeTab === SubTab.PRODUCTS ? 'Total Items' : 'Categories'}
+                                  </p>
+                              </div>
                           </div>
                       </div>
 

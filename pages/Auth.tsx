@@ -153,39 +153,13 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         setShopEmail(email.trim());
         setOnboardingUser(user);
       } else {
-        let authResult;
-        try {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email: email.trim(),
-            password
-          });
-          if (error) {
-            // Check if it's invalid login credentials (meaning user might not exist yet)
-            const errMsg = error.message || '';
-            if (errMsg.includes('Invalid login credentials') || error.status === 400) {
-              // Attempt to auto sign up
-              const signUpResult = await supabase.auth.signUp({
-                email: email.trim(),
-                password,
-                options: {
-                  data: {
-                    name: email.trim().split('@')[0]
-                  }
-                }
-              });
-              if (signUpResult.error) throw signUpResult.error;
-              authResult = signUpResult.data;
-            } else {
-              throw error;
-            }
-          } else {
-            authResult = data;
-          }
-        } catch (authErr: any) {
-          throw authErr;
-        }
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password
+        });
+        if (error) throw error;
 
-        const supabaseUser = authResult?.user;
+        const supabaseUser = data?.user;
         if (!supabaseUser) throw new Error('No user returned from login.');
 
         const user: User = {
@@ -623,12 +597,9 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             /* --- ADMIN EMAIL & PASSWORD LOGIN FORM --- */
             <div>
               <div className="text-center mb-5">
-                <h2 className="text-sm font-bold text-zinc-300 uppercase tracking-widest">
+                <h2 id="admin-auth-title" className="text-sm font-bold text-zinc-300 uppercase tracking-widest">
                   {isSignUp ? 'Create Account' : 'Admin Sign In'}
                 </h2>
-                <p className="text-xs text-zinc-500 mt-1">
-                  {isSignUp ? 'Set up your warehouse account' : 'Manage warehouse settings, products, and staff roles'}
-                </p>
               </div>
 
               <form onSubmit={handleAuth} className="space-y-4">

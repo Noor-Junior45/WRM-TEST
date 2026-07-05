@@ -246,7 +246,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             </div>
             <div className="flex flex-wrap items-center gap-2">
                 <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-gray-200 shadow-sm">
-                    <button onClick={() => onNavigate(Tab.POS)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors text-xs font-black"><ShoppingCart size={14}/> NEW SALE</button>
                     <button onClick={() => onNavigate(Tab.WAREHOUSE, 'add')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors text-xs font-black"><Package size={14}/> ADD STOCK</button>
                 </div>
             </div>
@@ -786,7 +785,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                                     <Badge color="bg-gray-100 text-gray-600 text-[9px] uppercase">Stock: {p.stock}</Badge>
                                 </div>
                             </div>
-                            <Button onClick={() => { closeDetail(); onNavigate(Tab.POS); }} size="sm" variant="neutral" className="border-amber-200 text-amber-700 font-black uppercase text-[10px] shrink-0">SELL NOW</Button>
                         </div>
                     ))}
                 </div>
@@ -915,9 +913,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                                 </div>
                                 <div className="text-right">
                                     <div className="text-base font-black text-red-600">₹{(p.stock * p.sellPrice).toLocaleString()}</div>
-                                    <button onClick={() => { closeDetail(); onNavigate(Tab.POS); }} className="text-[9px] font-black text-blue-600 uppercase border-b border-blue-200 hover:text-blue-700 transition-colors">
-                                        Launch Discount
-                                    </button>
                                 </div>
                             </div>
                         ))

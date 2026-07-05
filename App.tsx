@@ -1,12 +1,11 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Tab, User } from './types';
-import { Package, ShoppingCart, Users, User as UserIcon, LayoutDashboard } from 'lucide-react';
+import { Package, Users, User as UserIcon, LayoutDashboard } from 'lucide-react';
 import { supabase } from './services/supabase';
 import { LoadingSpinner } from './components/UI';
 
 // Pages
 const Warehouse = React.lazy(() => import('./pages/Warehouse').then(m => ({ default: m.Warehouse })));
-const POS = React.lazy(() => import('./pages/POS').then(m => ({ default: m.POS })));
 const Dashboard = React.lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
 const Customers = React.lazy(() => import('./pages/Customers').then(m => ({ default: m.Customers })));
 const Profile = React.lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
@@ -59,9 +58,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (currentUser && currentUser.role === 'staff') {
       const allowedTabs = [Tab.PROFILE];
-      if (currentUser.staffRole === 'pos') {
-        allowedTabs.push(Tab.POS);
-      } else if (currentUser.staffRole === 'inventory') {
+      if (currentUser.staffRole === 'inventory') {
         allowedTabs.push(Tab.WAREHOUSE);
       }
       if (!allowedTabs.includes(activeTab)) {
@@ -178,11 +175,38 @@ const App: React.FC = () => {
       );
   }
 
+  // Prevent 'pos' staff accounts from accessing this application
+  if (currentUser.role === 'staff' && currentUser.staffRole === 'pos') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 max-w-md w-full text-center space-y-6">
+          <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-red-100">
+            <UserIcon size={32} />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-black text-slate-900">Access Denied</h2>
+            <p className="text-sm text-slate-500 leading-relaxed">
+              Your staff account is designated for <strong>POS/CRM</strong>. This app is now dedicated to <strong>Inventory & Administration</strong> only.
+            </p>
+            <p className="text-xs text-emerald-600 font-bold bg-emerald-50 py-2 rounded-lg border border-emerald-100/60 mt-4">
+              Please use the separate POS/CRM application to log in.
+            </p>
+          </div>
+          <button 
+            onClick={handleLogout} 
+            className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors shadow-md"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const isStaff = currentUser?.role === 'staff';
   const staffRole = currentUser?.staffRole;
 
   const showWarehouse = !isStaff || staffRole === 'inventory';
-  const showPOS = !isStaff || staffRole === 'pos';
   const showDashboard = !isStaff;
   const showCustomers = !isStaff;
 
@@ -191,7 +215,6 @@ const App: React.FC = () => {
       <main className={`${activeTab === Tab.WAREHOUSE ? 'pb-28 md:pb-32' : 'p-4 md:p-6 pb-28 md:pb-32'} w-full max-w-[1920px] mx-auto min-h-screen`}>
         <Suspense fallback={<LoadingSpinner />}>
             {activeTab === Tab.WAREHOUSE && <Warehouse initialAction={pendingAction} onClearAction={() => setPendingAction(undefined)} />}
-            {activeTab === Tab.POS && <POS />}
             {activeTab === Tab.DASHBOARD && <Dashboard onNavigate={handleNavigate} />}
             {activeTab === Tab.CUSTOMERS && <Customers initialAction={pendingAction} onClearAction={() => setPendingAction(undefined)} />}
             {activeTab === Tab.PROFILE && <Profile user={currentUser} onLogin={handleLogin} onLogout={handleLogout} />}
@@ -205,18 +228,6 @@ const App: React.FC = () => {
               <button onClick={() => handleTabChange(Tab.WAREHOUSE)} className={`flex flex-col items-center gap-1 px-3 transition-all ${activeTab === Tab.WAREHOUSE ? 'text-yellow-600 scale-105 font-bold' : 'text-gray-800'}`}>
                 <Package size={22} />
                 <span className="text-[10px] tracking-wide">Stock</span>
-              </button>
-              {(showPOS || showDashboard || showCustomers) && <div className="w-px h-6 bg-gray-800/10 mx-1"></div>}
-            </>
-          )}
-
-          {showPOS && (
-            <>
-              <button onClick={() => handleTabChange(Tab.POS)} className={`flex flex-col items-center gap-1 px-3 transition-all duration-300 ${activeTab === Tab.POS ? '' : 'text-gray-800'}`}>
-                 <div className={`flex items-center justify-center transition-all duration-300 ${activeTab === Tab.POS ? 'bg-green-600 text-white w-14 h-14 rounded-full shadow-xl -mt-12 ring-4 ring-[#fdfdfc]' : 'bg-transparent text-gray-800 w-auto h-auto mt-0'}`}>
-                    <ShoppingCart size={activeTab === Tab.POS ? 26 : 22} />
-                </div>
-                <span className={`text-[10px] font-bold tracking-wide ${activeTab === Tab.POS ? 'w-0 h-0 opacity-0' : 'opacity-100 mt-0.5'}`}>POS</span>
               </button>
               {(showDashboard || showCustomers) && <div className="w-px h-6 bg-gray-800/10 mx-1"></div>}
             </>
