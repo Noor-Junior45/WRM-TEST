@@ -13,7 +13,11 @@ import {
   Store,
   MapPin,
   Phone,
-  Check
+  Check,
+  Package,
+  Sparkles,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 interface AuthProps {
@@ -46,6 +50,8 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   // Status State
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPin, setShowPin] = useState(false);
 
   React.useEffect(() => {
     const testSupabase = async () => {
@@ -313,62 +319,107 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     onLogin(guestUser);
   };
 
+  // Playful Direct Colors & Styling Helper Objects
+  const ink = "#1D1818";
+  const bg = "#FFFEF2";
+  const accent = "#FF5C00";
+
   // --- RENDERING ONBOARDING WIZARD ---
   if (onboardingUser) {
     return (
-      <div className="min-h-screen flex flex-col justify-center bg-zinc-950 p-6 font-sans">
-        <div className="w-full max-w-[500px] mx-auto animate-in fade-in duration-300">
+      <div 
+        className="min-h-screen flex flex-col justify-center items-center p-6"
+        style={{
+          backgroundColor: bg,
+          color: ink,
+          backgroundImage: `
+            linear-gradient(rgba(29, 24, 24, 0.08) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(29, 24, 24, 0.08) 1px, transparent 1px)
+          `,
+          backgroundSize: '40px 40px'
+        }}
+      >
+        <div className="w-full max-w-[550px] animate-in fade-in duration-300">
           <div className="text-center mb-8">
-            <span className="inline-flex p-3 bg-zinc-900 rounded-2xl text-[#3ecf8e] mb-3 border border-zinc-800">
-              <Store size={32} className="animate-pulse" />
+            <span 
+              className="inline-block font-mono text-[10px] font-bold px-3 py-1.5 rounded-sm transform rotate-[-1deg] uppercase tracking-wider border-2"
+              style={{ background: ink, color: bg, borderColor: ink }}
+            >
+              INITIAL SETUP
             </span>
-            <h1 className="text-3xl font-extrabold text-zinc-100 tracking-tight">Configure Your Warehouse</h1>
-            <p className="text-zinc-400 mt-2 text-sm font-medium">Configure store settings to suit your inventory</p>
+            <h1 className="font-['Gaegu'] text-6xl md:text-7xl font-bold leading-none mt-2 select-none" style={{ color: ink }}>
+              Configure<br/>Warehouse
+            </h1>
+            <p className="text-sm font-medium mt-3 max-w-[360px] mx-auto opacity-90">
+              Set up your space, tags, and contact details to get everything fully synchronized.
+            </p>
           </div>
 
-          <div className="bg-zinc-900 rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] p-8 border border-zinc-800">
-            <div className="space-y-5">
+          <div 
+            className="bg-white border-[3px] p-6 md:p-8 rounded-none relative"
+            style={{
+              borderColor: ink,
+              boxShadow: `12px 12px 0 ${ink}`
+            }}
+          >
+            {/* Playful top right badge circle */}
+            <div 
+              className="absolute -top-3.5 -right-3.5 w-7 h-7 rounded-full border-[3px] animate-bounce"
+              style={{ backgroundColor: accent, borderColor: ink }}
+            />
+
+            <div className="space-y-6">
               
               {/* Warehouse Name */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Warehouse / Shop Name</label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500">
-                    <Store size={18} />
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="E.g. Noor Enterprise"
-                    value={shopName}
-                    onChange={e => setShopName(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 bg-zinc-950 border border-zinc-800 focus:border-emerald-500 rounded-xl font-medium outline-none text-sm text-zinc-100 placeholder-zinc-500 transition-colors"
-                  />
-                </div>
+                <label className="text-xs font-bold font-mono uppercase tracking-wider block">Warehouse / Store Name</label>
+                <input
+                  type="text"
+                  placeholder="E.g. Noor Enterprise"
+                  value={shopName}
+                  onChange={e => setShopName(e.target.value)}
+                  className="w-full border-2 px-4 py-3 font-mono text-sm outline-none transition-all"
+                  style={{
+                    backgroundColor: bg,
+                    borderColor: ink,
+                  }}
+                  onFocus={e => {
+                    e.target.style.backgroundColor = '#ffffff';
+                    e.target.style.boxShadow = `4px 4px 0 ${accent}`;
+                  }}
+                  onBlur={e => {
+                    e.target.style.backgroundColor = bg;
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
               </div>
 
               {/* Warehouse Type / Category */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Warehouse Category</label>
-                <div className="grid grid-cols-2 gap-2">
+                <label className="text-xs font-bold font-mono uppercase tracking-wider block">Warehouse Category</label>
+                <div className="grid grid-cols-2 gap-2.5">
                   {[
-                    { id: 'general', label: 'General / Hardware' },
+                    { id: 'general', label: 'General Goods' },
                     { id: 'pharma', label: 'Pharmaceuticals' },
-                    { id: 'grocery', label: 'Grocery / Foods' },
-                    { id: 'electronics', label: 'Electronics & Tech' },
+                    { id: 'grocery', label: 'Grocery / Food' },
+                    { id: 'electronics', label: 'Electronics & IT' },
                     { id: 'clothing', label: 'Clothing & Apparel' }
                   ].map(cat => (
                     <button
                       key={cat.id}
                       type="button"
                       onClick={() => setShopCategory(cat.id)}
-                      className={`py-2.5 px-3 rounded-xl text-left border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
-                        shopCategory === cat.id 
-                          ? 'border-[#3ecf8e] bg-emerald-500/10 text-emerald-400' 
-                          : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
-                      }`}
+                      className="py-3 px-3.5 text-left border-2 text-xs font-extrabold flex items-center justify-between transition-all cursor-pointer rounded-none"
+                      style={{
+                        backgroundColor: shopCategory === cat.id ? accent : bg,
+                        color: shopCategory === cat.id ? '#ffffff' : ink,
+                        borderColor: ink,
+                        transform: shopCategory === cat.id ? 'translate(2px, 2px)' : 'none',
+                        boxShadow: shopCategory === cat.id ? 'none' : `3px 3px 0 ${ink}`
+                      }}
                     >
-                      <span>{cat.label}</span>
-                      {shopCategory === cat.id && <Check size={14} className="text-[#3ecf8e]" />}
+                      <span className="font-mono">{cat.label}</span>
+                      {shopCategory === cat.id && <Check size={14} className="stroke-[3px]" />}
                     </button>
                   ))}
                 </div>
@@ -376,86 +427,127 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
               {/* Location */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Location / Address</label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500">
-                    <MapPin size={18} />
-                  </span>
+                <label className="text-xs font-bold font-mono uppercase tracking-wider block">Location / Address</label>
+                <input
+                  type="text"
+                  placeholder="City, Country"
+                  value={shopLocation}
+                  onChange={e => setShopLocation(e.target.value)}
+                  className="w-full border-2 px-4 py-3 font-mono text-sm outline-none transition-all"
+                  style={{
+                    backgroundColor: bg,
+                    borderColor: ink,
+                  }}
+                  onFocus={e => {
+                    e.target.style.backgroundColor = '#ffffff';
+                    e.target.style.boxShadow = `4px 4px 0 ${accent}`;
+                  }}
+                  onBlur={e => {
+                    e.target.style.backgroundColor = bg;
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
+              </div>
+
+              {/* Basic details: Phone & Email */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold font-mono uppercase tracking-wider block">Phone Number</label>
                   <input
                     type="text"
-                    placeholder="City, Country"
-                    value={shopLocation}
-                    onChange={e => setShopLocation(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 bg-zinc-950 border border-zinc-800 focus:border-emerald-500 rounded-xl font-medium outline-none text-sm text-zinc-100 placeholder-zinc-500 transition-colors"
+                    placeholder="+91 XXXXX XXXXX"
+                    value={shopPhone}
+                    onChange={e => setShopPhone(e.target.value)}
+                    className="w-full border-2 px-4 py-3 font-mono text-xs outline-none transition-all"
+                    style={{
+                      backgroundColor: bg,
+                      borderColor: ink,
+                    }}
+                    onFocus={e => {
+                      e.target.style.backgroundColor = '#ffffff';
+                      e.target.style.boxShadow = `4px 4px 0 ${accent}`;
+                    }}
+                    onBlur={e => {
+                      e.target.style.backgroundColor = bg;
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold font-mono uppercase tracking-wider block">Store Email</label>
+                  <input
+                    type="email"
+                    placeholder="store@email.com"
+                    value={shopEmail}
+                    onChange={e => setShopEmail(e.target.value)}
+                    className="w-full border-2 px-4 py-3 font-mono text-xs outline-none transition-all"
+                    style={{
+                      backgroundColor: bg,
+                      borderColor: ink,
+                    }}
+                    onFocus={e => {
+                      e.target.style.backgroundColor = '#ffffff';
+                      e.target.style.boxShadow = `4px 4px 0 ${accent}`;
+                    }}
+                    onBlur={e => {
+                      e.target.style.backgroundColor = bg;
+                      e.target.style.boxShadow = 'none';
+                    }}
                   />
                 </div>
               </div>
 
-              {/* Basic details: Phone & Email */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Phone Number</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">
-                      <Phone size={16} />
-                    </span>
-                    <input
-                      type="text"
-                      placeholder="+91 XXXXX XXXXX"
-                      value={shopPhone}
-                      onChange={e => setShopPhone(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2.5 bg-zinc-950 border border-zinc-800 focus:border-emerald-500 rounded-xl font-medium outline-none text-xs text-zinc-100 placeholder-zinc-500 transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Store Contact Email</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">
-                      <Mail size={16} />
-                    </span>
-                    <input
-                      type="email"
-                      placeholder="store@email.com"
-                      value={shopEmail}
-                      onChange={e => setShopEmail(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2.5 bg-zinc-950 border border-zinc-800 focus:border-emerald-500 rounded-xl font-medium outline-none text-xs text-zinc-100 placeholder-zinc-500 transition-colors"
-                    />
-                  </div>
-                </div>
-              </div>
-
               {error && (
-                <div className="p-3 bg-red-950/40 text-red-400 text-xs font-medium border border-red-900 rounded-xl flex items-start gap-2 leading-relaxed">
+                <div 
+                  className="p-4 border-2 font-mono text-xs font-bold flex items-start gap-2.5"
+                  style={{
+                    backgroundColor: '#FFF2F2',
+                    color: '#B91C1C',
+                    borderColor: ink,
+                    boxShadow: `4px 4px 0 #B91C1C`
+                  }}
+                >
                   <AlertTriangle size={16} className="shrink-0 mt-0.5" />
                   <span>{error}</span>
                 </div>
               )}
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-3 pt-3">
+              <div className="flex items-center gap-4 pt-3">
                 <button
                   type="button"
                   onClick={() => handleCompleteOnboarding(true)}
                   disabled={loading}
-                  className="flex-1 py-3 bg-zinc-950 hover:bg-zinc-900 text-zinc-400 font-bold rounded-xl transition-all border border-zinc-800 text-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="flex-1 py-4 font-mono font-black text-sm border-2 tracking-wider uppercase cursor-pointer transition-all active:translate-y-1 active:shadow-none"
+                  style={{
+                    backgroundColor: bg,
+                    color: ink,
+                    borderColor: ink,
+                    boxShadow: `4px 4px 0 ${ink}`
+                  }}
                 >
-                  <span>Skip Setup</span>
+                  Skip Setup
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleCompleteOnboarding(false)}
                   disabled={loading}
-                  className="flex-1 bg-[#3ecf8e] hover:bg-[#3ecf8e]/90 text-zinc-950 font-bold py-3 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 border-0 cursor-pointer"
+                  className="flex-1 font-mono font-black text-sm border-2 tracking-wider uppercase cursor-pointer transition-all active:translate-y-1 active:shadow-none flex items-center justify-center gap-2"
+                  style={{
+                    backgroundColor: accent,
+                    color: '#ffffff',
+                    borderColor: ink,
+                    boxShadow: `4px 4px 0 ${ink}`
+                  }}
                 >
                   {loading ? (
-                    <Loader2 size={18} className="animate-spin text-zinc-950" />
+                    <Loader2 size={18} className="animate-spin text-white" />
                   ) : (
                     <>
-                      <span>Complete Setup</span>
-                      <Check size={16} />
+                      <span>Complete</span>
+                      <Check size={16} className="stroke-[3px]" />
                     </>
                   )}
                 </button>
@@ -470,258 +562,429 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
   // --- RENDERING GENERAL AUTHENTICATION ---
   return (
-    <div className="min-h-screen flex flex-col justify-center bg-zinc-950 p-6 font-sans">
-      <div className="w-full max-w-[420px] mx-auto animate-in fade-in zoom-in duration-300">
-        <div className="text-center mb-8 animate-in slide-in-from-top-4 duration-500">
-          <img 
-            src="https://lh3.googleusercontent.com/p/AF1QipPlp0QUwcp2FOnTGiGNf5fqWnskinCj4QxRKa3o=s1360-w1360-h1020-rw" 
-            alt="Noor POS Logo" 
-            className="w-16 h-16 rounded-full shadow-2xl mx-auto mb-4 border border-zinc-800 object-cover"
-          />
-          <h1 className="text-2xl font-bold text-zinc-100 tracking-tight flex items-center justify-center gap-2">
-            Noor Warehouse
+    <div 
+      className="min-h-screen flex flex-col justify-center items-center p-4 md:p-8"
+      style={{
+        backgroundColor: bg,
+        color: ink,
+        backgroundImage: `
+          linear-gradient(rgba(29, 24, 24, 0.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(29, 24, 24, 0.08) 1px, transparent 1px)
+        `,
+        backgroundSize: '40px 40px'
+      }}
+    >
+      <div className="main-wrapper w-full max-w-[950px] grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-14 items-center py-6">
+        
+        {/* Playful Left Side Hero Banner */}
+        <div className="hero-section text-center lg:text-left relative py-4 lg:py-10 select-none">
+          <h1 
+            className="font-['Gaegu'] text-7xl sm:text-8xl md:text-9.5rem font-black leading-[0.8] tracking-tight mt-1"
+            style={{ color: ink }}
+          >
+            Noor<br />
+            <span className="text-stroke" style={{ color: accent }}>Warehouse</span>
           </h1>
-          <p className="text-zinc-400 mt-1.5 text-xs font-medium">Cloud-based Enterprise Warehouse System</p>
+
+          <p className="subhead text-sm sm:text-base md:text-lg font-medium mt-6 max-w-[440px] mx-auto lg:mx-0 leading-relaxed opacity-95">
+            The professional inventory management system that keeps things moving as fast as you do. Track stock levels, oversee categories, and sync staff profiles in real time.
+          </p>
+          
+          {/* Hand-drawn annotation helper */}
+          <div className="hidden lg:block relative mt-8 h-12">
+            <div className="annotation font-['Gaegu'] text-2xl font-bold italic" style={{ color: accent }}>
+              Let's get to work!
+            </div>
+            <svg 
+              className="svg-arrow absolute left-44 top-2 w-[55px] h-[30px] transform rotate-[-5deg]" 
+              viewBox="0 0 50 30" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="3.5" 
+              style={{ color: accent }}
+            >
+              <path d="M5 5C15 25 35 25 45 10M45 10L35 12M45 10L42 20" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
         </div>
 
-        <div className="bg-[#18181b] rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] p-6 md:p-8 border border-zinc-800/80">
-          
-          {/* Supabase-style Tabs for Admin and Staff Login */}
-          <div className="flex border-b border-zinc-800 mb-6">
-            <button
-              type="button"
-              onClick={() => { setSelectedRole('admin'); setError(''); }}
-              className={`flex-1 pb-3 text-sm font-semibold text-center border-b-2 transition-all cursor-pointer ${
-                selectedRole === 'admin' || selectedRole === null
-                  ? 'border-[#3ecf8e] text-[#3ecf8e]'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              Admin Portal
-            </button>
-            <button
-              type="button"
-              onClick={() => { setSelectedRole('staff'); setError(''); }}
-              className={`flex-1 pb-3 text-sm font-semibold text-center border-b-2 transition-all cursor-pointer ${
-                selectedRole === 'staff'
-                  ? 'border-[#3ecf8e] text-[#3ecf8e]'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              Staff Portal
-            </button>
-          </div>
+        {/* Playful Login Form Card */}
+        <div className="w-full max-w-[440px] mx-auto lg:max-w-none">
+          <div 
+            className="login-card bg-white border-[3px] p-6 md:p-8 rounded-none relative"
+            style={{
+              borderColor: ink,
+              boxShadow: `12px 12px 0 ${ink}`
+            }}
+          >
+            {/* Round pin/sticker badge */}
+            <div 
+              className="absolute -top-3.5 -right-3.5 w-7 h-7 rounded-full border-[3px] animate-pulse"
+              style={{ backgroundColor: accent, borderColor: ink }}
+            />
 
-          {selectedRole === 'staff' ? (
-            /* --- STAFF LOGIN VIEW --- */
-            <div>
-              <div className="text-center mb-5">
-                <h2 className="text-sm font-bold text-zinc-300 uppercase tracking-widest">Staff Sign In</h2>
-                <p className="text-xs text-zinc-500 mt-1">Access using your credentials and assigned PIN</p>
-              </div>
+            {/* Playful portal switcher tabs */}
+            <div className="grid grid-cols-2 gap-2 border-b-2 pb-5 border-dashed mb-6" style={{ borderColor: ink }}>
+              <button
+                type="button"
+                onClick={() => { setSelectedRole('admin'); setError(''); }}
+                className="py-2 px-1 text-center font-mono text-xs font-black tracking-wide cursor-pointer border-2 uppercase transition-all"
+                style={{
+                  backgroundColor: (selectedRole === 'admin' || selectedRole === null) ? accent : bg,
+                  color: (selectedRole === 'admin' || selectedRole === null) ? '#ffffff' : ink,
+                  borderColor: ink,
+                  boxShadow: (selectedRole === 'admin' || selectedRole === null) ? 'none' : `3px 3px 0 ${ink}`,
+                  transform: (selectedRole === 'admin' || selectedRole === null) ? 'translate(2px, 2px)' : 'none'
+                }}
+              >
+                Admin
+              </button>
+              <button
+                type="button"
+                onClick={() => { setSelectedRole('staff'); setError(''); }}
+                className="py-2 px-1 text-center font-mono text-xs font-black tracking-wide cursor-pointer border-2 uppercase transition-all"
+                style={{
+                  backgroundColor: selectedRole === 'staff' ? accent : bg,
+                  color: selectedRole === 'staff' ? '#ffffff' : ink,
+                  borderColor: ink,
+                  boxShadow: selectedRole === 'staff' ? 'none' : `3px 3px 0 ${ink}`,
+                  transform: selectedRole === 'staff' ? 'translate(2px, 2px)' : 'none'
+                }}
+              >
+                Staff Portal
+              </button>
+            </div>
 
-              <form onSubmit={handleStaffLogin} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Admin's Email / User ID</label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500">
-                      <Mail size={18} />
-                    </span>
+            {selectedRole === 'staff' ? (
+              /* --- STAFF LOGIN VIEW --- */
+              <div>
+                <div className="mb-5">
+                  <h2 className="font-sans text-2xl font-black uppercase tracking-tight" style={{ color: ink }}>
+                    Staff Access
+                  </h2>
+                  <p className="text-xs font-mono opacity-85 mt-1">Sign in with your admin credentials & unique PIN</p>
+                </div>
+
+                <form onSubmit={handleStaffLogin} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold font-mono uppercase tracking-wide block">Admin Email / User ID</label>
                     <input
                       type="text"
                       placeholder="e.g. admin@example.com"
                       value={adminEmail}
                       onChange={e => setAdminEmail(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-zinc-900/50 border border-zinc-800 focus:border-[#3ecf8e] rounded-xl font-medium outline-none text-sm text-zinc-100 placeholder-zinc-500 transition-all"
+                      className="w-full border-2 px-4 py-3 font-mono text-sm outline-none transition-all"
+                      style={{
+                        backgroundColor: bg,
+                        borderColor: ink,
+                      }}
+                      onFocus={e => {
+                        e.target.style.backgroundColor = '#ffffff';
+                        e.target.style.boxShadow = `4px 4px 0 ${accent}`;
+                      }}
+                      onBlur={e => {
+                        e.target.style.backgroundColor = bg;
+                        e.target.style.boxShadow = 'none';
+                      }}
                     />
                   </div>
-                </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Staff Unique ID No.</label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500">
-                      <UserIcon size={18} />
-                    </span>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold font-mono uppercase tracking-wide block">Staff Unique ID</label>
                     <input
                       type="text"
                       placeholder="e.g. 1001"
                       value={staffId}
                       onChange={e => setStaffId(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-zinc-900/50 border border-zinc-800 focus:border-[#3ecf8e] rounded-xl font-medium outline-none text-sm text-zinc-100 placeholder-zinc-500 transition-all"
+                      className="w-full border-2 px-4 py-3 font-mono text-sm outline-none transition-all"
+                      style={{
+                        backgroundColor: bg,
+                        borderColor: ink,
+                      }}
+                      onFocus={e => {
+                        e.target.style.backgroundColor = '#ffffff';
+                        e.target.style.boxShadow = `4px 4px 0 ${accent}`;
+                      }}
+                      onBlur={e => {
+                        e.target.style.backgroundColor = bg;
+                        e.target.style.boxShadow = 'none';
+                      }}
                     />
                   </div>
-                </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Enter PIN</label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500">
-                      <Lock size={18} />
-                    </span>
-                    <input
-                      type="password"
-                      placeholder="••••"
-                      maxLength={6}
-                      value={staffPin}
-                      onChange={e => setStaffPin(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-zinc-900/50 border border-zinc-800 focus:border-[#3ecf8e] rounded-xl font-medium outline-none text-sm text-zinc-100 placeholder-zinc-500 transition-all text-center tracking-widest font-black"
-                    />
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="p-3 bg-red-950/40 text-red-400 text-xs font-medium border border-red-900 rounded-xl flex items-start gap-2 leading-relaxed">
-                    <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-                    <span>{error}</span>
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-[#3ecf8e] hover:bg-[#3ecf8e]/90 text-zinc-950 font-bold py-3 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 border-0 mt-2 cursor-pointer"
-                >
-                  {loading ? (
-                    <Loader2 size={20} className="animate-spin text-zinc-950" />
-                  ) : (
-                    <>
-                      <span>Staff Sign In</span>
-                      <ArrowRight size={16} />
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-          ) : (
-            /* --- ADMIN EMAIL & PASSWORD LOGIN FORM --- */
-            <div>
-              <div className="text-center mb-5">
-                <h2 id="admin-auth-title" className="text-sm font-bold text-zinc-300 uppercase tracking-widest">
-                  {isSignUp ? 'Create Account' : 'Admin Sign In'}
-                </h2>
-              </div>
-
-              <form onSubmit={handleAuth} className="space-y-4">
-                {isSignUp && (
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Full Name</label>
+                    <label className="text-xs font-bold font-mono uppercase tracking-wide block">Enter PIN</label>
                     <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500">
-                        <UserIcon size={18} />
-                      </span>
+                      <input
+                        type={showPin ? "text" : "password"}
+                        placeholder="••••"
+                        maxLength={6}
+                        value={staffPin}
+                        onChange={e => setStaffPin(e.target.value)}
+                        className="w-full border-2 pl-4 pr-12 py-3 font-mono text-sm text-center tracking-widest font-black outline-none transition-all"
+                        style={{
+                          backgroundColor: bg,
+                          borderColor: ink,
+                        }}
+                        onFocus={e => {
+                          e.target.style.backgroundColor = '#ffffff';
+                          e.target.style.boxShadow = `4px 4px 0 ${accent}`;
+                        }}
+                        onBlur={e => {
+                          e.target.style.backgroundColor = bg;
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPin(!showPin)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black p-1 focus:outline-none cursor-pointer"
+                        style={{ background: 'transparent', border: 'none', boxShadow: 'none', width: 'auto', padding: '4px', margin: 0 }}
+                      >
+                        {showPin ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div 
+                      className="p-3 border-2 font-mono text-xs font-bold flex items-start gap-2"
+                      style={{
+                        backgroundColor: '#FFF2F2',
+                        color: '#B91C1C',
+                        borderColor: ink,
+                        boxShadow: `3px 3px 0 #B91C1C`
+                      }}
+                    >
+                      <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                      <span>{error}</span>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-4.5 font-mono font-black text-sm border-2 uppercase tracking-wider cursor-pointer transition-all active:translate-y-1 active:shadow-none flex items-center justify-center gap-2 mt-4"
+                    style={{
+                      backgroundColor: accent,
+                      color: '#ffffff',
+                      borderColor: ink,
+                      boxShadow: `4px 4px 0 ${ink}`
+                    }}
+                  >
+                    {loading ? (
+                      <Loader2 size={18} className="animate-spin text-white" />
+                    ) : (
+                      <>
+                        <span>Staff Sign In</span>
+                        <ArrowRight size={16} className="stroke-[3px]" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
+            ) : (
+              /* --- ADMIN LOGIN VIEW --- */
+              <div>
+                <div className="mb-5">
+                  <h2 className="font-sans text-2xl font-black uppercase tracking-tight" style={{ color: ink }}>
+                    {isSignUp ? 'Create Account' : 'Admin Sign In'}
+                  </h2>
+                  <p className="text-xs font-mono opacity-85 mt-1">
+                    {isSignUp ? 'Register to manage warehouses and staff' : 'Access core inventory control and statistics'}
+                  </p>
+                </div>
+
+                <form onSubmit={handleAuth} className="space-y-4">
+                  {isSignUp && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold font-mono uppercase tracking-wide block">Full Name</label>
                       <input
                         type="text"
                         placeholder="John Doe"
                         value={name}
                         onChange={e => setName(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 bg-zinc-900/50 border border-zinc-800 focus:border-[#3ecf8e] rounded-xl font-medium outline-none text-sm text-zinc-100 placeholder-zinc-500 transition-colors"
+                        className="w-full border-2 px-4 py-3 font-mono text-sm outline-none transition-all"
+                        style={{
+                          backgroundColor: bg,
+                          borderColor: ink,
+                        }}
+                        onFocus={e => {
+                          e.target.style.backgroundColor = '#ffffff';
+                          e.target.style.boxShadow = `4px 4px 0 ${accent}`;
+                        }}
+                        onBlur={e => {
+                          e.target.style.backgroundColor = bg;
+                          e.target.style.boxShadow = 'none';
+                        }}
                       />
                     </div>
-                  </div>
-                )}
+                  )}
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Email Address</label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500">
-                      <Mail size={18} />
-                    </span>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold font-mono uppercase tracking-wide block">Email Address</label>
                     <input
                       type="email"
                       placeholder="your@email.com"
                       value={email}
                       onChange={e => setEmail(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-zinc-900/50 border border-zinc-800 focus:border-[#3ecf8e] rounded-xl font-medium outline-none text-sm text-zinc-100 placeholder-zinc-500 transition-colors"
+                      className="w-full border-2 px-4 py-3 font-mono text-sm outline-none transition-all"
+                      style={{
+                        backgroundColor: bg,
+                        borderColor: ink,
+                      }}
+                      onFocus={e => {
+                        e.target.style.backgroundColor = '#ffffff';
+                        e.target.style.boxShadow = `4px 4px 0 ${accent}`;
+                      }}
+                      onBlur={e => {
+                        e.target.style.backgroundColor = bg;
+                        e.target.style.boxShadow = 'none';
+                      }}
                     />
                   </div>
-                </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">Password</label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500">
-                      <Lock size={18} />
-                    </span>
-                    <input
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-zinc-900/50 border border-zinc-800 focus:border-[#3ecf8e] rounded-xl font-medium outline-none text-sm text-zinc-100 placeholder-zinc-500 transition-colors"
-                    />
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold font-mono uppercase tracking-wide block">Password</label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        className="w-full border-2 pl-4 pr-12 py-3 font-mono text-sm outline-none transition-all"
+                        style={{
+                          backgroundColor: bg,
+                          borderColor: ink,
+                        }}
+                        onFocus={e => {
+                          e.target.style.backgroundColor = '#ffffff';
+                          e.target.style.boxShadow = `4px 4px 0 ${accent}`;
+                        }}
+                        onBlur={e => {
+                          e.target.style.backgroundColor = bg;
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black p-1 focus:outline-none cursor-pointer"
+                        style={{ background: 'transparent', border: 'none', boxShadow: 'none', width: 'auto', padding: '4px', margin: 0 }}
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                {error && (
-                  <div className="p-3 bg-red-950/40 text-red-400 text-xs font-medium border border-red-900 rounded-xl flex items-start gap-2 leading-relaxed">
-                    <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-                    <span>{error}</span>
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-[#3ecf8e] hover:bg-[#3ecf8e]/90 text-zinc-950 font-bold py-3.5 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 border-0 mt-2 cursor-pointer"
-                >
-                  {loading ? (
-                    <Loader2 size={20} className="animate-spin text-zinc-950" />
-                  ) : (
-                    <>
-                      <span>{isSignUp ? 'Register Account' : 'Sign In'}</span>
-                      <ArrowRight size={16} />
-                    </>
+                  {error && (
+                    <div 
+                      className="p-3 border-2 font-mono text-xs font-bold flex items-start gap-2"
+                      style={{
+                        backgroundColor: '#FFF2F2',
+                        color: '#B91C1C',
+                        borderColor: ink,
+                        boxShadow: `3px 3px 0 #B91C1C`
+                      }}
+                    >
+                      <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                      <span>{error}</span>
+                    </div>
                   )}
-                </button>
-              </form>
 
-              <div className="text-center mt-5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSignUp(!isSignUp);
-                    setError('');
-                  }}
-                  className="text-xs font-bold text-[#3ecf8e] hover:underline cursor-pointer"
-                >
-                  {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
-                </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-4 font-mono font-black text-sm border-2 uppercase tracking-wider cursor-pointer transition-all active:translate-y-1 active:shadow-none flex items-center justify-center gap-2 mt-4"
+                    style={{
+                      backgroundColor: accent,
+                      color: '#ffffff',
+                      borderColor: ink,
+                      boxShadow: `4px 4px 0 ${ink}`
+                    }}
+                  >
+                    {loading ? (
+                      <Loader2 size={18} className="animate-spin text-white" />
+                    ) : (
+                      <>
+                        <span>{isSignUp ? 'Register Account' : 'Sign In'}</span>
+                        <ArrowRight size={16} className="stroke-[3px]" />
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                <div className="text-center mt-5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSignUp(!isSignUp);
+                      setError('');
+                    }}
+                    className="text-xs font-mono font-bold hover:underline cursor-pointer transition-colors"
+                    style={{ color: accent }}
+                  >
+                    {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <div className="relative py-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-zinc-800"></div>
+            {/* Sandbox divider line */}
+            <div className="relative my-6 flex items-center justify-center select-none">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t-2 border-dashed" style={{ borderColor: ink }} />
+              </div>
+              <span className="relative px-3 font-mono text-[10px] font-black tracking-widest uppercase" style={{ backgroundColor: '#ffffff', color: ink }}>
+                Sandbox
+              </span>
             </div>
-            <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-wider">
-              <span className="px-2 bg-[#18181b] text-zinc-500">Sandbox</span>
-            </div>
+
+            {/* Guest Sandbox Button */}
+            <button
+              type="button"
+              onClick={handleGuestLogin}
+              disabled={loading}
+              className="w-full py-3.5 font-mono font-black text-xs border-2 uppercase tracking-wider cursor-pointer transition-all active:translate-y-1 active:shadow-none flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: bg,
+                color: ink,
+                borderColor: ink,
+                boxShadow: `4px 4px 0 ${ink}`
+              }}
+            >
+              <span>Run Sandbox Demo Mode</span>
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={handleGuestLogin}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-zinc-900/30 hover:bg-zinc-900/60 text-zinc-400 hover:text-zinc-200 font-bold py-3 rounded-xl transition-all text-xs border border-zinc-800/80 cursor-pointer"
-          >
-            <span>Run Sandbox Demo Mode</span>
-          </button>
-        </div>
-
-        <div className="text-center mt-8">
-          <div className="flex items-center justify-center gap-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-            <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-[#3ecf8e] flex items-center gap-1 transition-colors">
+          {/* Links & Footer inside scope */}
+          <div className="flex justify-center gap-6 mt-8 font-mono text-[10px] uppercase tracking-wider select-none">
+            <a 
+              href="/privacy.html" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="hover:underline font-black flex items-center gap-1"
+              style={{ color: ink }}
+            >
               <ShieldCheck size={14} /> Privacy Policy
             </a>
-            <span className="text-zinc-700">•</span>
-            <a href="https://terms-conditions-store.vercel.app" target="_blank" rel="noopener noreferrer" className="hover:text-[#3ecf8e] transition-colors">
-              Terms
+            <span style={{ color: ink }}>•</span>
+            <a 
+              href="https://terms-conditions-store.vercel.app" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="hover:underline font-black"
+              style={{ color: ink }}
+            >
+              Terms of Use
             </a>
           </div>
+
+          <div className="text-center mt-5 text-[9px] font-mono font-bold tracking-widest uppercase opacity-60">
+            Noor Warehouse v1.7
+          </div>
         </div>
-        <div className="text-center mt-4 text-[10px] font-medium text-zinc-600 font-mono">Noor Warehouse POS v1.7</div>
+
       </div>
     </div>
   );
