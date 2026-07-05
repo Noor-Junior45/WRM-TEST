@@ -4,7 +4,7 @@ import { StoreService } from '../services/storeService';
 import { GeminiService } from '../services/geminiService';
 import { Customer, Sale, Product, Tab, Tag } from '../types';
 import { Card, Badge, Button } from '../components/UI';
-import { TrendingUp, Crown, Star, LayoutDashboard, IndianRupee, AlertTriangle, Phone, ArrowUpRight, Package, Wallet, ShoppingBag, PieChart as PieChartIcon, Users, UserPlus, Plus, ShoppingCart, ArrowRight, CheckCircle, DollarSign, Scan, Clock, CheckSquare, Sparkles, Banknote, Smartphone, CreditCard, Trophy, BarChart3, Box, Layers, Loader2, X, BrainCircuit, RefreshCw, MessageSquareText, ShieldCheck, Lightbulb, BookOpen, Activity } from 'lucide-react';
+import { TrendingUp, Crown, Star, LayoutDashboard, IndianRupee, AlertTriangle, Phone, ArrowUpRight, Package, Wallet, ShoppingBag, PieChart as PieChartIcon, Users, UserPlus, Plus, ArrowRight, CheckCircle, DollarSign, Scan, Clock, CheckSquare, Sparkles, Banknote, Smartphone, CreditCard, Trophy, BarChart3, Box, Layers, Loader2, X, BrainCircuit, RefreshCw, MessageSquareText, ShieldCheck, Lightbulb, BookOpen, Activity } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, BarChart, Bar } from 'recharts';
 
 interface DashboardProps {
@@ -186,8 +186,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             </div>
             <div className="flex flex-wrap items-center gap-2">
                 <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
-                    <button onClick={() => onNavigate(Tab.POS)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors text-xs font-bold whitespace-nowrap"><ShoppingCart size={14}/> New Sale</button>
-                    <button onClick={() => onNavigate(Tab.WAREHOUSE, 'add')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors text-xs font-bold whitespace-nowrap"><Package size={14}/> Add Manual</button>
+                    <button onClick={() => onNavigate(Tab.WAREHOUSE, 'add')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors text-xs font-bold whitespace-nowrap"><Package size={14}/> Add Product</button>
                     <button onClick={() => onNavigate(Tab.CUSTOMERS, 'add')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors text-xs font-bold whitespace-nowrap"><UserPlus size={14}/> Customer</button>
                 </div>
             </div>
